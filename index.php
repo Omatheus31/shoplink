@@ -38,7 +38,13 @@ try {
                         <h3><?php echo htmlspecialchars($produto['nome']); ?></h3>
                         <p class="price">R$ <?php echo number_format($produto['preco'], 2, ',', '.'); ?></p>
                         <p class="description"><?php echo htmlspecialchars($produto['descricao']); ?></p>
-                        <button class="add-to-cart-btn">Adicionar ao Carrinho</button>
+                        <button class="add-to-cart-btn" 
+                                data-id="<?php echo $produto['id']; ?>" 
+                                data-nome="<?php echo htmlspecialchars($produto['nome']); ?>" 
+                                data-preco="<?php echo $produto['preco']; ?>"
+                                data-imagem="<?php echo htmlspecialchars($produto['imagem_url']); ?>">
+                            Adicionar ao Carrinho
+                        </button>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
@@ -50,5 +56,6 @@ try {
     <footer>
         <p>&copy; <?php echo date('Y'); ?> Shoplink - Todos os direitos reservados.</p>
     </footer>
+    <script src="assets/js/cart.js"></script>
 </body>
 </html>
