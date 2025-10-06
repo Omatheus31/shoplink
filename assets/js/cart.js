@@ -51,12 +51,15 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('shoplinkCart', JSON.stringify(cart));
     }
 
-    // Função para atualizar o contador (deixaremos pronta para o futuro)
+    // Função para atualizar o contador 
     function updateCartCounter() {
-        // Aqui poderíamos ter um ícone de carrinho no header que seria atualizado
         const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-        console.log(`Total de itens no carrinho: ${cartCount}`);
-        // document.getElementById('cart-counter').innerText = cartCount;
+        const counterElement = document.getElementById('cart-counter');
+        if (counterElement) { // Verifica se o elemento existe na página
+            counterElement.innerText = cartCount;
+        }
     }
 
+    // Chame esta função uma vez quando a página carregar
+    updateCartCounter();
 });

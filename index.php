@@ -27,8 +27,10 @@ try {
 <body>
     <header class="main-header">
         <h1>Nosso Catálogo</h1>
-        </header>
-
+        <a href="carrinho.php" class="cart-link">
+            🛒 Carrinho (<span id="cart-counter">0</span>)
+        </a>
+    </header>
     <main class="container">
         <div class="product-grid">
             <?php if ($produtos): ?>
