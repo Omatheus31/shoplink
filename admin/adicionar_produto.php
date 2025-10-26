@@ -12,6 +12,7 @@
         <nav>
             <a href="index.php">Dashboard</a>
             <a href="produtos.php">Produtos</a>
+            <a href="pedidos.php">Pedidos</a> 
         </nav>
     </header>
 

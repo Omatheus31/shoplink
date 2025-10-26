@@ -43,6 +43,7 @@ try {
 <body>
     <header class="main-header" style="padding: 15px; margin-bottom: 0;"> <h1>Painel de Administração</h1>
         <nav>
+            <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a> 
             <a href="adicionar_produto.php" style="color: white;">Adicionar Novo Produto</a>
         </nav>
     </header>
