@@ -39,8 +39,11 @@ try {
     <header class="main-header" style="padding: 15px; margin-bottom: 0;">
         <h1>Painel de Administração</h1>
         <nav>
+            <a href="pedidos.php" style="color: white; margin-right: 15px; font-weight: bold;">Pedidos</a>
             <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
+            <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
             <a href="adicionar_produto.php" style="color: white;">Adicionar Produto</a>
+
         </nav>
     </header>
 

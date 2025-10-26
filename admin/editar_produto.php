@@ -1,5 +1,4 @@
 <?php
-// Inclui a conexão com o banco de dados
 require_once '../config/database.php';
 
 // 1. VERIFICAR SE O ID FOI PASSADO PELA URL
@@ -7,26 +6,27 @@ if (isset($_GET['id'])) {
     $id = $_GET['id'];
 
     try {
-        // 2. BUSCAR O PRODUTO NO BANCO DE DADOS
-        $sql = "SELECT * FROM produtos WHERE id = :id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        // fetch() busca apenas um registro
-        $produto = $stmt->fetch();
+        // 2. BUSCAR O PRODUTO ESPECÍFICO
+        $sql_produto = "SELECT * FROM produtos WHERE id = :id";
+        $stmt_produto = $pdo->prepare($sql_produto);
+        $stmt_produto->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt_produto->execute();
+        $produto = $stmt_produto->fetch();
 
-        // Se não encontrar o produto, redireciona para a lista
         if (!$produto) {
             header("Location: produtos.php");
             exit();
         }
 
+        // 3. BUSCAR TODAS AS CATEGORIAS PARA O DROPDOWN
+        $query_categorias = "SELECT * FROM categorias ORDER BY nome ASC";
+        $stmt_categorias = $pdo->query($query_categorias);
+        $categorias = $stmt_categorias->fetchAll();
+
     } catch (PDOException $e) {
-        die("Erro ao buscar o produto: " . $e->getMessage());
+        die("Erro ao buscar dados: " . $e->getMessage());
     }
 } else {
-    // Se nenhum ID for passado, redireciona para a lista
     header("Location: produtos.php");
     exit();
 }
@@ -38,13 +38,23 @@ if (isset($_GET['id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Produto - Admin Shoplink</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
     <header class="main-header" style="padding: 15px; margin-bottom: 0;">
         <h1>Painel de Administração</h1>
         <nav>
-            <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a> 
-            <a href="produtos.php" style="color: white;">Voltar para Produtos</a>
+            <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
+            <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
+            <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
         </nav>
     </header>
 
@@ -60,6 +70,20 @@ if (isset($_GET['id'])) {
                 <input type="text" id="nome" name="nome" value="<?php echo htmlspecialchars($produto['nome']); ?>" required>
             </div>
 
+            <div>
+                <label for="categoria">Categoria:</label>
+                <select id="categoria" name="id_categoria">
+                    <option value="">Selecione uma categoria (opcional)</option>
+                    <?php if (isset($categorias)): ?>
+                        <?php foreach ($categorias as $categoria): ?>
+                            <option value="<?php echo $categoria['id']; ?>" 
+                                <?php echo ($produto['id_categoria'] == $categoria['id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($categoria['nome']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
             <div>
                 <label for="descricao">Descrição:</label>
                 <textarea id="descricao" name="descricao" rows="4"><?php echo htmlspecialchars($produto['descricao']); ?></textarea>
