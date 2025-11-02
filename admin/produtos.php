@@ -1,3 +1,4 @@
+<?php require_once 'verifica_login.php'; ?>
 <?php
 require_once '../config/database.php';
 
@@ -47,7 +48,7 @@ try {
             <a href="produtos.php" style="color: white; margin-right: 15px; font-weight: bold;">Produtos</a>
             <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
             <a href="adicionar_produto.php" style="color: white;">Adicionar Produto</a>
-
+            <a href="../logout.php" style="color: #ffcccc; margin-left: auto;">Sair</a>
         </nav>
     </header>
 
