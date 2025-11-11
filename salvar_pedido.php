@@ -9,8 +9,10 @@ if (!isset($dados['cliente']) || !isset($dados['carrinho']) || empty($dados['car
     exit;
 }
 
-$nome_cliente = $dados['cliente']['nome'];
-$endereco_cliente = $dados['cliente']['endereco'];
+// Verifica se todas as chaves do cliente existem
+$nome_cliente = $dados['cliente']['nome'] ?? 'Cliente';
+$telefone_cliente = $dados['cliente']['telefone'] ?? 'N/A';
+$endereco_cliente = $dados['cliente']['endereco'] ?? 'N/A';
 $carrinho = $dados['carrinho'];
 
 $total_pedido = 0;
@@ -18,30 +20,24 @@ foreach ($carrinho as $item) {
     $total_pedido += $item['preco'] * $item['quantity'];
 }
 
-// --- MUDANÇA CRÍTICA AQUI ---
-// Define o ID do dono da loja (admin principal) para este pedido.
-// Futuramente, este ID será dinâmico com base na URL da loja.
 $id_loja_padrao = 1; 
-// --- FIM DA MUDANÇA ---
 
 $pdo->beginTransaction();
 
 try {
-    // 1. INSERIR O PEDIDO NA TABELA 'pedidos'
-    // --- MUDANÇA NA QUERY SQL ---
-    $sql_pedido = "INSERT INTO pedidos (nome_cliente, endereco_cliente, total_pedido, id_usuario) 
-                   VALUES (:nome, :endereco, :total, :id_usuario)";
+    $sql_pedido = "INSERT INTO pedidos (nome_cliente, telefone_cliente, endereco_cliente, total_pedido, id_usuario) 
+                   VALUES (:nome, :telefone, :endereco, :total, :id_usuario)";
     $stmt_pedido = $pdo->prepare($sql_pedido);
     $stmt_pedido->execute([
         ':nome' => $nome_cliente,
+        ':telefone' => $telefone_cliente,
         ':endereco' => $endereco_cliente,
         ':total' => $total_pedido,
-        ':id_usuario' => $id_loja_padrao // --- MUDANÇA AQUI ---
+        ':id_usuario' => $id_loja_padrao
     ]);
     
     $id_pedido = $pdo->lastInsertId();
 
-    // 2. INSERIR CADA ITEM (esta parte não muda)
     $sql_item = "INSERT INTO pedido_itens (id_pedido, id_produto, quantidade, preco_unitario) 
                  VALUES (:id_pedido, :id_produto, :quantidade, :preco)";
     $stmt_item = $pdo->prepare($sql_item);
@@ -56,10 +52,12 @@ try {
     }
 
     $pdo->commit();
-    echo json_encode(['sucesso' => true, 'id_pedido' => $id_pedido]);
+    // Retorna o nome do cliente para a mensagem de sucesso
+    echo json_encode(['sucesso' => true, 'id_pedido' => $id_pedido, 'nome_cliente' => $nome_cliente]);
 
 } catch (Exception $e) {
     $pdo->rollBack();
+    // Garante que a mensagem de erro seja enviada
     echo json_encode(['sucesso' => false, 'mensagem' => 'Erro ao salvar pedido: ' . $e->getMessage()]);
 }
 ?>

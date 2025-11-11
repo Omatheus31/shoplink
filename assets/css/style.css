@@ -124,3 +124,44 @@ footer {
 .product-card h3 a:hover {
     color: #3498db; /* Muda de cor ao passar o mouse */
 }
+
+
+/* Garante que o body ocupe a tela toda */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* Mantenha suas outras regras de body (font, margin, etc.) */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Garante que o <main> cresça e empurre o footer para baixo */
+main.container {
+    flex-grow: 1;
+}
+
+/* ========================================= */
+/* --- CÓDIGO DE GRID PARA RESPONSIVIDADE --- */
+/* ========================================= */
+
+/* --- Grid de Produtos (Catálogo) --- */
+.product-grid {
+    display: grid;
+    /* Cria colunas responsivas: elas terão no mínimo 250px e no máximo 1fr */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+/* Garante que o card de produto se comporte bem no grid */
+.product-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card .description {
+    flex-grow: 1; /* Faz a descrição ocupar o espaço, alinhando os botões */
+}

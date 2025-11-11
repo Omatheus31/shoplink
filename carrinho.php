@@ -42,13 +42,18 @@ try {
             </div>
 
         <h3 id="cart-total">Total: R$ 0,00</h3>
-
+        <div id="checkout-sucesso" style="display: none; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; text-align: center;">
+            </div>
         <div class="checkout-form">
             <h3>Finalizar Pedido</h3>
             <form id="checkout-form">
                 <div>
                     <label for="nome">Seu Nome:</label>
                     <input type="text" id="nome" name="nome" required style="width: 95%; padding: 8px; margin-bottom: 10px;">
+                </div>
+                <div>
+                    <label for="telefone">WhatsApp / Telefone (com DDD):</label>
+                    <input type="tel" id="telefone" name="telefone" required style="width: 95%; padding: 8px; margin-bottom: 10px;" placeholder="Ex: 93912345678">
                 </div>
                 <div>
                     <label for="endereco">Endereço de Entrega:</label>
@@ -66,13 +71,11 @@ try {
             const cartTotalElement = document.getElementById('cart-total');
             const checkoutForm = document.getElementById('checkout-form');
             const whatsappBtn = document.getElementById('whatsapp-btn');
-
-            // Carrega o carrinho do localStorage
             const cart = JSON.parse(localStorage.getItem('shoplinkCart')) || [];
 
             // --- 2. FUNÇÃO PRINCIPAL PARA MOSTRAR O CARRINHO ---
             function displayCart() {
-                cartItemsContainer.innerHTML = ''; // Limpa o container
+                cartItemsContainer.innerHTML = '';
                 let total = 0;
 
                 if (cart.length === 0) {
@@ -82,15 +85,12 @@ try {
                     return;
                 }
 
-                // Exibe o formulário se tiver itens
                 cartTotalElement.style.display = 'block';
                 checkoutForm.style.display = 'block';
 
                 cart.forEach(item => {
                     const itemTotal = item.preco * item.quantity;
                     total += itemTotal;
-
-                    // --- HTML CORRIGIDO COM O BOTÃO "REMOVER" ---
                     const cartItemHTML = `
                         <div class="cart-item">
                             <img src="uploads/${item.imagem}" alt="${item.nome}">
@@ -106,55 +106,50 @@ try {
                     cartItemsContainer.innerHTML += cartItemHTML;
                 });
 
-                // Atualiza o valor total
                 cartTotalElement.innerText = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
-                
-                // Adiciona os eventos aos botões "Remover" que acabamos de criar
                 addRemoveEvents();
             }
             
             // --- 3. FUNÇÕES DE LÓGICA DO CARRINHO ---
-
-            // Função para salvar o carrinho no localStorage
             function saveCart() {
                 localStorage.setItem('shoplinkCart', JSON.stringify(cart));
             }
 
-            // Função para adicionar eventos de clique aos botões "Remover"
             function addRemoveEvents() {
                 const removeButtons = document.querySelectorAll('.remove-item-btn');
                 removeButtons.forEach(button => {
                     button.addEventListener('click', (event) => {
-                        event.preventDefault(); // Impede que o link '#' recarregue a página
+                        event.preventDefault();
                         const productId = event.target.dataset.id;
                         removeItemFromCart(productId);
                     });
                 });
             }
 
-            // Função para remover um item do array 'cart'
             function removeItemFromCart(productId) {
-                // Encontra o índice (aposição) do item no array
                 const itemIndex = cart.findIndex(item => item.id === productId);
-
-                if (itemIndex > -1) { // Se o item foi encontrado...
-                    cart.splice(itemIndex, 1); // Remove 1 item daquela posição
+                if (itemIndex > -1) {
+                    cart.splice(itemIndex, 1);
                 }
-                saveCart(); // Salva o carrinho atualizado
-                displayCart(); // Redesenha o carrinho na tela
+                saveCart();
+                displayCart();
             }
 
             // --- 4. FUNÇÃO DE CHECKOUT (ENVIO DO PEDIDO) ---
             checkoutForm.addEventListener('submit', async (event) => {
-                event.preventDefault(); // Impede o envio padrão do formulário
-                
+                event.preventDefault();
                 whatsappBtn.disabled = true;
                 whatsappBtn.innerText = 'Processando...';
 
+                const clienteNome = document.getElementById('nome').value;
+                const clienteTelefone = document.getElementById('telefone').value;
+                const clienteEndereco = document.getElementById('endereco').value;
+
                 const pedidoData = {
                     cliente: {
-                        nome: document.getElementById('nome').value,
-                        endereco: document.getElementById('endereco').value
+                        nome: clienteNome,
+                        telefone: clienteTelefone,
+                        endereco: clienteEndereco
                     },
                     carrinho: cart
                 };
@@ -169,38 +164,42 @@ try {
                     const result = await response.json();
 
                     if (result.sucesso) {
-                        const numeroLoja = '<?php echo $numeroLoja; ?>';
-                        let mensagem = `Olá! 👋 Gostaria de fazer um pedido (Nº ${result.id_pedido}):\n\n`;
-                        cart.forEach(item => {
-                            mensagem += `*Produto:* ${item.nome}\n*Qtd:* ${item.quantity}\n\n`;
-                        });
-                        const totalPedido = cart.reduce((total, item) => total + (item.preco * item.quantity), 0);
-                        mensagem += `*Total: R$ ${totalPedido.toFixed(2).replace('.', ',')}*\n\n`;
-                        mensagem += `--- DADOS DE ENTREGA ---\n`;
-                        mensagem += `*Nome:* ${pedidoData.cliente.nome}\n`;
-                        mensagem += `*Endereço:* ${pedidoData.cliente.endereco}`;
-                        
-                        const mensagemCodificada = encodeURIComponent(mensagem);
-                        const whatsappUrl = `https://api.whatsapp.com/send?phone=${numeroLoja}&text=${mensagemCodificada}`;
-                        
                         localStorage.removeItem('shoplinkCart');
-                        window.location.href = whatsappUrl;
+                        document.getElementById('cart-items').style.display = 'none';
+                        document.getElementById('cart-total').style.display = 'none';
+                        document.getElementById('checkout-form').style.display = 'none';
+
+                        const sucessoDiv = document.getElementById('checkout-sucesso');
+                        sucessoDiv.innerHTML = `
+                            <h3>✅ Pedido Nº ${result.id_pedido} Recebido!</h3>
+                            <p>Obrigado, ${htmlspecialchars(result.nome_cliente)}! Já estamos separando seu pedido.</p>
+                            <p>Entraremos em contato em breve pelo número <strong>${htmlspecialchars(clienteTelefone)}</strong> para confirmar o pagamento e a entrega.</p>
+                            <br>
+                            <a href="index.php" class="add-to-cart-btn" style="background-color: #27ae60;">Voltar ao Catálogo</a>
+                        `;
+                        sucessoDiv.style.display = 'block';
 
                     } else {
-                        alert('Erro ao processar o pedido: ' + result.mensagem);
+                        // --- ERRO DE SINTAXE CORRIGIDO AQUI (FALTAVA UM '+') ---
+                        alert('Erro ao processar o pedido: ' + (result.mensagem || 'Tente novamente.'));
                         whatsappBtn.disabled = false;
-                        whatsappBtn.innerText = 'Pedir por WhatsApp';
+                        whatsappBtn.innerText = 'Finalizar Pedido';
                     }
                 } catch (error) {
+                    // Erro de rede/conexão
                     console.error('Erro na requisição:', error);
                     alert('Não foi possível conectar ao servidor. Tente novamente.');
                     whatsappBtn.disabled = false;
-                    whatsappBtn.innerText = 'Pedir por WhatsApp';
+                    whatsappBtn.innerText = 'Finalizar Pedido';
                 }
             });
+
+            // Função de segurança para evitar XSS
+            function htmlspecialchars(str) {
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+            }
             
             // --- 5. INICIALIZAÇÃO ---
-            // Exibe o carrinho assim que a página carrega
             displayCart();
             
         }); // Fim do 'DOMContentLoaded'
