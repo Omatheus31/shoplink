@@ -24,7 +24,7 @@ try {
         .cart-item-info { flex-grow: 1; }
         .cart-item-info h4 { margin: 0 0 5px 0; }
         .checkout-form { background-color: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
-        #whatsapp-btn { background-color: #25D366; color: white; padding: 15px 20px; border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; width: 100%; margin-top: 10px; transition: background-color 0.3s; }
+        #whatsapp-btn { background-color: #174269ff; color: white; padding: 15px 20px; border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; width: 100%; margin-top: 10px; transition: background-color 0.3s; }
         #whatsapp-btn:hover { background-color: #128C7E; }
         #whatsapp-btn:disabled { background-color: #aaa; cursor: not-allowed; }
         .remove-item-btn { color: #e74c3c; text-decoration: none; font-size: 0.9em; font-weight: bold; }
@@ -59,7 +59,7 @@ try {
                     <label for="endereco">Endereço de Entrega:</label>
                     <textarea id="endereco" name="endereco" required style="width: 95%; padding: 8px;"></textarea>
                 </div>
-                <button type="submit" id="whatsapp-btn">Pedir por WhatsApp</button>
+                <button type="submit" id="whatsapp-btn">Concluir pedido</button>
             </form>
         </div>
     </main>
