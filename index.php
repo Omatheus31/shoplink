@@ -110,7 +110,11 @@ try {
                 <?php foreach ($produtos as $produto): ?>
                     <div class="product-card">
                         <img src="uploads/<?php echo htmlspecialchars($produto['imagem_url']); ?>" alt="<?php echo htmlspecialchars($produto['nome']); ?>">
-                        <h3><?php echo htmlspecialchars($produto['nome']); ?></h3>
+                        <h3>
+                            <a href="produto_detalhe.php?id=<?php echo $produto['id']; ?>">
+                                <?php echo htmlspecialchars($produto['nome']); ?>
+                            </a>
+                        </h3>
                         <p class="price">R$ <?php echo number_format($produto['preco'], 2, ',', '.'); ?></p>
                         <p class="description"><?php echo htmlspecialchars($produto['descricao']); ?></p>
                         <button class="add-to-cart-btn" 

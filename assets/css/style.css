@@ -115,3 +115,12 @@ footer {
     font-weight: bold;
     margin-top: 10px;
 }
+
+
+.product-card h3 a {
+    text-decoration: none;
+    color: inherit; /* Herda a cor do <h3> (preto) */
+}
+.product-card h3 a:hover {
+    color: #3498db; /* Muda de cor ao passar o mouse */
+}

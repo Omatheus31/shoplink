@@ -1,5 +1,8 @@
-<?php require_once 'verifica_login.php'; ?>
 <?php
+// 1. O Guardião: Inicia a sessão e nos dá o $id_usuario_logado
+require_once 'verifica_login.php'; 
+
+// 2. Conexão com o banco
 require_once '../config/database.php';
 
 // PARTE 1: Processar o formulário de NOVA CATEGORIA (se enviado)
@@ -8,15 +11,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nome_categoria'])) {
     
     if (!empty($nome_categoria)) {
         try {
-            $sql_insert = "INSERT INTO categorias (nome) VALUES (:nome)";
+            // --- MUDANÇA AQUI ---
+            // Agora também inserimos o id_usuario do usuário logado
+            $sql_insert = "INSERT INTO categorias (nome, id_usuario) VALUES (:nome, :id_usuario)";
             $stmt_insert = $pdo->prepare($sql_insert);
-            $stmt_insert->execute([':nome' => $nome_categoria]);
+            $stmt_insert->execute([
+                ':nome' => $nome_categoria,
+                ':id_usuario' => $id_usuario_logado // Variável vinda do verifica_login.php
+            ]);
             
-            // Redireciona para a própria página para limpar o formulário e evitar reenvio
             header("Location: categorias.php?status=criada");
             exit();
         } catch (PDOException $e) {
-            // Código 23000 é erro de violação de integridade (ex: nome duplicado)
+            // (Tratamento de erro não muda)
             if ($e->getCode() == 23000) {
                 $erro = "Erro: Esta categoria já existe.";
             } else {
@@ -30,9 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nome_categoria'])) {
 
 // PARTE 2: Buscar todas as categorias existentes para listar
 try {
-    $query = "SELECT * FROM categorias ORDER BY nome ASC";
-    $stmt = $pdo->query($query);
+    // --- MUDANÇA AQUI ---
+    // Agora selecionamos APENAS as categorias ONDE o id_usuario é o do logado
+    $query = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([':id_usuario' => $id_usuario_logado]); // Passamos o ID para a query
     $categorias = $stmt->fetchAll();
+    
 } catch (PDOException $e) {
     die("Erro ao buscar categorias: " . $e->getMessage());
 }
@@ -63,11 +74,12 @@ try {
     <header class="main-header" style="padding: 15px; margin-bottom: 0;">
         <h1>Painel de Administração</h1>
         <nav>
+            <a href="index.php" style="color: white; margin-right: 15px;">Dashboard</a>
             <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
             <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
             <a href="categorias.php" style="color: white; margin-right: 15px; font-weight: bold;">Categorias</a>
-            <a href="adicionar_produto.php" style="color: white;">Adicionar Produto</a>
-            <a href="../logout.php" style="color: #ffcccc; margin-left: auto;">Sair</a>
+            <a href="adicionar_produto.php" style="color: white; margin-right: 15px;">Adicionar Produto</a>
+            <a href="../logout.php" style="color: #ffcccc; margin-right: 15px;">Sair</a>
         </nav>
     </header>
 

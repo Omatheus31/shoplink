@@ -1,10 +1,9 @@
 <?php
+// 1. O Guardião: Nos dá o $id_usuario_logado
+require_once 'verifica_login.php'; 
 require_once '../config/database.php';
 
-// 1. VERIFICAR SE A REQUISIÇÃO É DO TIPO POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    // 2. PEGAR O ID
     $id = $_POST['id'];
 
     if (empty($id)) {
@@ -13,18 +12,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         // 3. EXECUTAR O DELETE
-        // Graças ao 'ON DELETE SET NULL', não precisamos nos preocupar
-        // em atualizar os produtos manualmente. O BD faz isso.
-        $sql = "DELETE FROM categorias WHERE id = :id";
+        // --- MUDANÇA AQUI ---
+        // Adicionamos "AND id_usuario = :id_usuario" ao WHERE
+        // Garante que um usuário só possa EXCLUIR suas PRÓPRIAS categorias.
+        $sql = "DELETE FROM categorias WHERE id = :id AND id_usuario = :id_usuario";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':id' => $id]);
+        $stmt->execute([
+            ':id' => $id,
+            ':id_usuario' => $id_usuario_logado
+        ]);
         
-        // 4. REDIRECIONAR
         header("Location: categorias.php?status=excluida");
         exit();
 
     } catch (PDOException $e) {
-        die("Erro ao excluir categoria: " . $e->getMessage());
+        die("Erro ao excluir categoria: ". $e->getMessage());
     }
 } else {
     header("Location: categorias.php");

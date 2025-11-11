@@ -1,5 +1,6 @@
-<?php require_once 'verifica_login.php'; ?>
 <?php
+// 1. O Guardião: Nos dá o $id_usuario_logado
+require_once 'verifica_login.php'; 
 require_once '../config/database.php';
 
 // 1. VERIFICAR SE O ID FOI PASSADO PELA URL
@@ -8,18 +9,24 @@ if (isset($_GET['id'])) {
 
     try {
         // 2. BUSCAR A CATEGORIA NO BANCO DE DADOS
-        $sql = "SELECT * FROM categorias WHERE id = :id";
+        // --- MUDANÇA AQUI ---
+        // Agora, só busca o ID se ele pertencer ao usuário logado
+        $sql = "SELECT * FROM categorias WHERE id = :id AND id_usuario = :id_usuario";
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute([
+            ':id' => $id,
+            ':id_usuario' => $id_usuario_logado
+        ]);
         $categoria = $stmt->fetch();
 
+        // Se a categoria não for encontrada (ou não pertencer ao usuário),
+        // o $categoria será false.
         if (!$categoria) {
             header("Location: categorias.php");
             exit();
         }
     } catch (PDOException $e) {
-        die("Erro ao buscar a categoria: " . $e->getMessage());
+        die("Erro ao buscar a categoria: ". $e->getMessage());
     }
 } else {
     header("Location: categorias.php");
@@ -44,6 +51,7 @@ if (isset($_GET['id'])) {
         <h1>Painel de Administração</h1>
         <nav>
             <a href="categorias.php" style="color: white;">Voltar para Categorias</a>
+            <a href="../logout.php" style="color: #ffcccc; margin-left: auto;">Sair</a>
         </nav>
     </header>
 

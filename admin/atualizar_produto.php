@@ -1,17 +1,14 @@
 <?php
+// 1. O Guardião: Nos dá o $id_usuario_logado
+require_once 'verifica_login.php'; 
 require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    // COLETAR OS DADOS (INCLUINDO A CATEGORIA)
     $id = $_POST['id'];
     $nome = trim($_POST['nome']);
     $descricao = trim($_POST['descricao']);
     $preco = str_replace(',', '.', $_POST['preco']);
-    
-    // --- MUDANÇA AQUI ---
     $id_categoria = !empty($_POST['id_categoria']) ? $_POST['id_categoria'] : NULL;
-    // --- FIM DA MUDANÇA ---
 
     if (empty($id) || empty($nome) || empty($preco)) {
         die("Erro: Dados essenciais não foram enviados.");
@@ -22,8 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nova_imagem_url = null;
         if (isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
             
-            $stmt_old_img = $pdo->prepare("SELECT imagem_url FROM produtos WHERE id = :id");
-            $stmt_old_img->execute([':id' => $id]);
+            $stmt_old_img = $pdo->prepare("SELECT imagem_url FROM produtos WHERE id = :id AND id_usuario = :id_usuario");
+            $stmt_old_img->execute([':id' => $id, ':id_usuario' => $id_usuario_logado]);
             $imagem_antiga = $stmt_old_img->fetchColumn();
 
             $target_dir = "../uploads/";
@@ -39,38 +36,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 3. CONSTRUIR A QUERY SQL DINAMICAMENTE
         if ($nova_imagem_url) {
             // Se uma nova imagem foi enviada, atualiza TUDO
-            $sql = "UPDATE produtos SET nome = :nome, descricao = :descricao, preco = :preco, id_categoria = :id_categoria, imagem_url = :imagem_url WHERE id = :id";
+            $sql = "UPDATE produtos SET nome = :nome, descricao = :descricao, preco = :preco, id_categoria = :id_categoria, imagem_url = :imagem_url 
+                    WHERE id = :id AND id_usuario = :id_usuario"; // --- MUDANÇA AQUI ---
         } else {
             // Se não, atualiza tudo MENOS a imagem
-            $sql = "UPDATE produtos SET nome = :nome, descricao = :descricao, preco = :preco, id_categoria = :id_categoria WHERE id = :id";
+            $sql = "UPDATE produtos SET nome = :nome, descricao = :descricao, preco = :preco, id_categoria = :id_categoria 
+                    WHERE id = :id AND id_usuario = :id_usuario"; // --- MUDANÇA AQUI ---
         }
         
         // 4. PREPARAR E EXECUTAR A QUERY
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':nome', $nome);
-        $stmt->bindValue(':descricao', ''.$descricao); // Usando bindValue como corrigimos
-        $stmt->bindParam(':preco', $preco);
-        $stmt->bindParam(':id_categoria', $id_categoria); // --- NOVA LINHA ---
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        
+        $params = [
+            ':nome' => $nome,
+            ':descricao' => $descricao,
+            ':preco' => $preco,
+            ':id_categoria' => $id_categoria,
+            ':id' => $id,
+            ':id_usuario' => $id_usuario_logado // --- MUDANÇA AQUI ---
+        ];
 
         if ($nova_imagem_url) {
-            $stmt->bindParam(':imagem_url', $nova_imagem_url);
+            $params[':imagem_url'] = $nova_imagem_url;
         }
         
-        $stmt->execute();
+        $stmt->execute($params);
         
         if ($nova_imagem_url && !empty($imagem_antiga) && file_exists("../uploads/" . $imagem_antiga)) {
             unlink("../uploads/" . $imagem_antiga);
         }
         
-        // 5. REDIRECIONAR PARA A LISTA (COM MENSAGEM DE SUCESSO)
-        header("Location: produtos.php?status=editado"); // Vamos usar isso para o alerta
+        header("Location: produtos.php?status=editado");
         exit();
 
     } catch (PDOException $e) {
         die("Erro ao atualizar o produto: " . $e->getMessage());
     }
-
 } else {
     header("Location: produtos.php");
     exit();

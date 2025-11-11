@@ -1,15 +1,18 @@
-<?php require_once 'verifica_login.php'; ?>
 <?php
-// Inclui a conexão com o banco de dados
+// 1. O Guardião: Nos dá o $id_usuario_logado
+require_once 'verifica_login.php'; 
 require_once '../config/database.php';
 
-// Busca todas as categorias para o dropdown
+// Busca todas as categorias PARA O DROPDOWN
 try {
-    $query_categorias = "SELECT * FROM categorias ORDER BY nome ASC";
-    $stmt_categorias = $pdo->query($query_categorias);
+    // --- MUDANÇA AQUI ---
+    // Busca apenas as categorias do usuário logado
+    $query_categorias = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
+    $stmt_categorias = $pdo->prepare($query_categorias);
+    $stmt_categorias->execute([':id_usuario' => $id_usuario_logado]);
     $categorias = $stmt_categorias->fetchAll();
+
 } catch (PDOException $e) {
-    // Se der erro, continua sem as categorias, mas registra o erro
     $erro_categorias = "Não foi possível carregar as categorias.";
 }
 ?>
@@ -21,7 +24,6 @@ try {
     <title>Adicionar Novo Produto - Admin Shoplink</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <style>
-        /* Adicionando estilo para o select */
         select {
             width: 100%;
             padding: 8px;
@@ -50,17 +52,19 @@ try {
             <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
             <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
             <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
-            <a href="adicionar_produto.php" style="color: white;  font-weight: bold;">Adicionar Produto</a>
-            <a href="../logout.php" style="color: #ffcccc; margin-left: auto;">Sair</a>
+            <a href="adicionar_produto.php" style="color: white; font-weight: bold; margin-right: 15px;">Adicionar Produto</a>
+            <a href="../logout.php" style="color: #ffcccc; margin-right: 15px;">Sair</a>
         </nav>
     </header>
 
     <main class="container">
+
         <?php if (isset($_GET['status']) && $_GET['status'] === 'sucesso'): ?>
             <div class="alert alert-sucesso">
                 Produto salvo com sucesso!
             </div>
         <?php endif; ?>
+
         <h2>Adicionar Novo Produto</h2>
 
         <form action="salvar_produto.php" method="post" enctype="multipart/form-data">
@@ -85,21 +89,19 @@ try {
                     <p style="color: red;"><?php echo $erro_categorias; ?></p>
                 <?php endif; ?>
             </div>
+
             <div>
                 <label for="descricao">Descrição:</label>
                 <textarea id="descricao" name="descricao" rows="4"></textarea>
             </div>
-
             <div>
                 <label for="preco">Preço (R$):</label>
                 <input type="number" id="preco" name="preco" step="0.01" min="0.01" required>
             </div>
-
             <div>
                 <label for="imagem">Imagem do Produto:</label>
                 <input type="file" id="imagem" name="imagem" accept="image/*" required>
             </div>
-
             <div>
                 <button type="submit">Salvar Produto</button>
             </div>

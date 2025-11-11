@@ -1,19 +1,14 @@
 <?php
-// 1. Incluir o arquivo de conexão
+// 1. O Guardião: Nos dá o $id_usuario_logado
+require_once 'verifica_login.php'; 
 require_once '../config/database.php';
 
-// 2. Verificar se o formulário foi submetido
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // 3. Coletar e validar os dados do formulário
     $nome = trim($_POST['nome']);
     $descricao = trim($_POST['descricao']);
     $preco = str_replace(',', '.', $_POST['preco']);
-    
-    // --- MUDANÇA AQUI ---
-    // Pega o id_categoria. Se for uma string vazia "", converte para NULL
     $id_categoria = !empty($_POST['id_categoria']) ? $_POST['id_categoria'] : NULL;
-    // --- FIM DA MUDANÇA ---
 
     if (empty($nome) || empty($preco) || !isset($_FILES['imagem']) || $_FILES['imagem']['error'] !== UPLOAD_ERR_OK) {
         die("Erro: Todos os campos, incluindo a imagem, são obrigatórios.");
@@ -29,20 +24,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             // --- MUDANÇA NA QUERY SQL ---
-            $sql = "INSERT INTO produtos (nome, descricao, preco, id_categoria, imagem_url) VALUES (:nome, :descricao, :preco, :id_categoria, :imagem_url)";
+            // Adicionamos o id_usuario
+            $sql = "INSERT INTO produtos (nome, descricao, preco, id_categoria, imagem_url, id_usuario) 
+                    VALUES (:nome, :descricao, :preco, :id_categoria, :imagem_url, :id_usuario)";
             $stmt = $pdo->prepare($sql);
             
-            // 8. Vincular os parâmetros
             $stmt->bindParam(':nome', $nome);
             $stmt->bindParam(':descricao', $descricao);
             $stmt->bindParam(':preco', $preco);
-            $stmt->bindParam(':id_categoria', $id_categoria); // --- NOVA LINHA ---
+            $stmt->bindParam(':id_categoria', $id_categoria);
             $stmt->bindParam(':imagem_url', $nome_arquivo);
+            // --- NOVA LINHA ---
+            $stmt->bindParam(':id_usuario', $id_usuario_logado); // Pega o ID da sessão
 
-            // 9. Executar
             $stmt->execute();
             
-            // 10. Redirecionar
             header("Location: adicionar_produto.php?status=sucesso");
             exit();
 

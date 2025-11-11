@@ -1,5 +1,6 @@
-<?php require_once 'verifica_login.php'; ?>
 <?php
+// 1. O Guardião: Nos dá o $id_usuario_logado
+require_once 'verifica_login.php'; 
 require_once '../config/database.php';
 
 // 1. VERIFICAR SE O ID FOI PASSADO PELA URL
@@ -8,20 +9,27 @@ if (isset($_GET['id'])) {
 
     try {
         // 2. BUSCAR O PRODUTO ESPECÍFICO
-        $sql_produto = "SELECT * FROM produtos WHERE id = :id";
+        // --- MUDANÇA AQUI ---
+        // SÓ busca o produto se o ID corresponder E pertencer ao usuário logado
+        $sql_produto = "SELECT * FROM produtos WHERE id = :id AND id_usuario = :id_usuario";
         $stmt_produto = $pdo->prepare($sql_produto);
-        $stmt_produto->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt_produto->execute();
+        $stmt_produto->execute([
+            ':id' => $id,
+            ':id_usuario' => $id_usuario_logado
+        ]);
         $produto = $stmt_produto->fetch();
 
+        // Se o produto não for encontrado (ou não pertencer ao usuário),
+        // redireciona para a lista.
         if (!$produto) {
             header("Location: produtos.php");
             exit();
         }
 
-        // 3. BUSCAR TODAS AS CATEGORIAS PARA O DROPDOWN
-        $query_categorias = "SELECT * FROM categorias ORDER BY nome ASC";
-        $stmt_categorias = $pdo->query($query_categorias);
+        // 3. BUSCAR AS CATEGORIAS DO USUÁRIO PARA O DROPDOWN
+        $query_categorias = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
+        $stmt_categorias = $pdo->prepare($query_categorias);
+        $stmt_categorias->execute([':id_usuario' => $id_usuario_logado]);
         $categorias = $stmt_categorias->fetchAll();
 
     } catch (PDOException $e) {
@@ -53,9 +61,11 @@ if (isset($_GET['id'])) {
     <header class="main-header" style="padding: 15px; margin-bottom: 0;">
         <h1>Painel de Administração</h1>
         <nav>
+            <a href="index.php" style="color: white; margin-right: 15px;">Dashboard</a>
             <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
             <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
             <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
+            <a href="adicionar_produto.php" style="color: white;  font-weight: bold;">Adicionar Produto</a>
             <a href="../logout.php" style="color: #ffcccc; margin-left: auto;">Sair</a>
         </nav>
     </header>
@@ -86,6 +96,7 @@ if (isset($_GET['id'])) {
                     <?php endif; ?>
                 </select>
             </div>
+
             <div>
                 <label for="descricao">Descrição:</label>
                 <textarea id="descricao" name="descricao" rows="4"><?php echo htmlspecialchars($produto['descricao']); ?></textarea>
