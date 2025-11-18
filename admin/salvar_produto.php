@@ -1,10 +1,10 @@
 <?php
-// 1. O Guardião: Nos dá o $id_usuario_logado
-require_once 'verifica_login.php'; 
-require_once '../config/database.php';
+// 1. INCLUI O HEADER DO ADMIN (Protege, conecta ao $pdo, nos dá $id_usuario_logado)
+require_once 'includes/header_admin.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    // 2. COLETA OS DADOS (Já tínhamos feito isso)
     $nome = trim($_POST['nome']);
     $descricao = trim($_POST['descricao']);
     $preco = str_replace(',', '.', $_POST['preco']);
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Erro: Todos os campos, incluindo a imagem, são obrigatórios.");
     }
     
-    // ... (Lógica de upload de imagem não muda) ...
+    // 3. LÓGICA DE UPLOAD (Não muda)
     $target_dir = "../uploads/";
     $imageFileType = strtolower(pathinfo($_FILES['imagem']['name'], PATHINFO_EXTENSION));
     $nome_arquivo = uniqid() . '.' . $imageFileType;
@@ -23,8 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (move_uploaded_file($_FILES['imagem']['tmp_name'], $target_file)) {
         
         try {
-            // --- MUDANÇA NA QUERY SQL ---
-            // Adicionamos o id_usuario
+            // 4. LÓGICA DE SALVAMENTO (Já usa $id_usuario_logado)
             $sql = "INSERT INTO produtos (nome, descricao, preco, id_categoria, imagem_url, id_usuario) 
                     VALUES (:nome, :descricao, :preco, :id_categoria, :imagem_url, :id_usuario)";
             $stmt = $pdo->prepare($sql);
@@ -34,7 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bindParam(':preco', $preco);
             $stmt->bindParam(':id_categoria', $id_categoria);
             $stmt->bindParam(':imagem_url', $nome_arquivo);
-            // --- NOVA LINHA ---
             $stmt->bindParam(':id_usuario', $id_usuario_logado); // Pega o ID da sessão
 
             $stmt->execute();

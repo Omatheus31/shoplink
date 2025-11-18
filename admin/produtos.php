@@ -1,100 +1,100 @@
 <?php
-// 1. O Guardião: Nos dá o $id_usuario_logado
-require_once 'verifica_login.php'; 
-require_once '../config/database.php';
+// 1. INCLUI O HEADER DO ADMIN (que já conecta ao $pdo e protege a página)
+$titulo_pagina = "Produtos"; // Define o título da aba
+require_once 'includes/header_admin.php';
+
+// 2. LÓGICA DE 3 PAPÉIS
+$sql = "";
+$params = [];
+
+if ($_SESSION['role'] === 'admin_master') {
+    // Admin Master vê TUDO, com o nome da loja
+    $sql = "SELECT p.*, u.nome_loja as nome_da_loja 
+            FROM produtos p
+            JOIN usuarios u ON p.id_usuario = u.id
+            ORDER BY p.id DESC";
+} else {
+    // Admin Loja vê SÓ O DELE
+    $sql = "SELECT * FROM produtos 
+            WHERE id_usuario = :id_usuario 
+            ORDER BY id DESC";
+    $params[':id_usuario'] = $id_usuario_logado;
+}
 
 try {
-    // --- MUDANÇA AQUI ---
-    // Agora selecionamos APENAS os produtos do usuário logado
-    $query = "SELECT id, nome, preco, descricao, imagem_url FROM produtos WHERE id_usuario = :id_usuario ORDER BY id DESC";
-    $stmt = $pdo->prepare($query);
-    $stmt->execute([':id_usuario' => $id_usuario_logado]); // Passamos o ID
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $produtos = $stmt->fetchAll();
-
 } catch (PDOException $e) {
-    die("Erro ao buscar produtos: " . $e->getMessage());
+    echo '<div class="alert alert-danger">Erro: ' . $e->getMessage() . '</div>';
 }
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciar Produtos - Admin</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        .admin-table th { background-color: #f2f2f2; }
-        .admin-table tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        .action-btn { padding: 5px 10px; text-decoration: none; border-radius: 4px; color: white; margin-right: 5px; font-size: 0.9em; }
-        .edit-btn { background-color: #3498db; }
-        .delete-btn { background-color: #e74c3c; border: none; cursor: pointer; font-family: inherit; }
-    </style>
-</head>
-<body>
-    <header class="main-header" style="padding: 15px; margin-bottom: 0;">
-        <h1>Painel de Administração</h1>
-        <nav>
-            <a href="index.php" style="color: white; margin-right: 15px;">Dashboard</a>
-            <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
-            <a href="produtos.php" style="color: white; margin-right: 15px; font-weight: bold;">Produtos</a>
-            <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
-            <a href="adicionar_produto.php" style="color: white; margin-right: 15px;">Adicionar Produto</a>
-            <a href="../logout.php" style="color: #ffcccc;  margin-right: 15px;">Sair</a>
-        </nav>
-    </header>
 
-    <main class="container">
-        <h2>Produtos Cadastrados</h2>
-        
-        <?php if (isset($_GET['status']) && $_GET['status'] === 'editado'): ?>
-            <div class="alert alert-sucesso" style="padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; color: #155724; background-color: #d4edda; border-color: #c3e6cb;">
-                Produto atualizado com sucesso!
-            </div>
-        <?php endif; ?>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Produtos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="adicionar_produto.php" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle-fill"></i> Adicionar Novo Produto
+        </a>
+    </div>
+</div>
 
-        <?php if (isset($_GET['status']) && $_GET['status'] === 'excluido'): ?>
-            <div class="alert alert-sucesso" style="padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; color: #155724; background-color: #d4edda; border-color: #c3e6cb;">
-                Produto excluído com sucesso!
-            </div>
-        <?php endif; ?>
-
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Preço</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($produtos): ?>
-                    <?php foreach ($produtos as $produto): ?>
-                        <tr>
-                            <td><?php echo $produto['id']; ?></td>
-                            <td><?php echo htmlspecialchars($produto['nome']); ?></td>
-                            <td>R$ <?php echo number_format($produto['preco'], 2, ',', '.'); ?></td>
-                            
-                            <td>
-                                <a href="editar_produto.php?id=<?php echo $produto['id']; ?>" class="action-btn edit-btn">Editar</a>
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-4">Imagem</th>
+                        <th scope="col">Nome</th>
+                        <th scope="col">Preço</th>
+                        <?php if ($_SESSION['role'] === 'admin_master'): ?>
+                            <th scope="col">Loja</th> <!-- Só o Admin Master vê esta coluna -->
+                        <?php endif; ?>
+                        <th scope="col" class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (isset($produtos) && $produtos): ?>
+                        <?php foreach ($produtos as $produto): ?>
+                            <tr>
+                                <td class="ps-4">
+                                    <img src="../uploads/<?php echo htmlspecialchars($produto['imagem_url']); ?>" alt="<?php echo htmlspecialchars($produto['nome']); ?>" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                                </td>
+                                <td class="fw-bold"><?php echo htmlspecialchars($produto['nome']); ?></td>
+                                <td>R$ <?php echo number_format($produto['preco'], 2, ',', '.'); ?></td>
                                 
-                                <form action="excluir_produto.php" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
-                                    <input type="hidden" name="id" value="<?php echo $produto['id']; ?>">
-                                    <button type="submit" class="action-btn delete-btn">Excluir</button>
-                                </form>
+                                <?php if ($_SESSION['role'] === 'admin_master'): ?>
+                                    <td><?php echo htmlspecialchars($produto['nome_da_loja']); ?></td>
+                                <?php endif; ?>
+                                
+                                <td class="text-end pe-4">
+                                    <a href="editar_produto.php?id=<?php echo $produto['id']; ?>" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil-fill"></i> Editar
+                                    </a>
+                                    <!-- Formulário de Exclusão -->
+                                    <form action="excluir_produto.php" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
+                                        <input type="hidden" name="id" value="<?php echo $produto['id']; ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash-fill"></i> Excluir
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="<?php echo ($_SESSION['role'] === 'admin_master') ? '6' : '5'; ?>" class="text-center py-5 text-muted">
+                                <i class="bi bi-box-seam fs-1 d-block mb-2"></i>
+                                Nenhum produto encontrado.
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="4">Nenhum produto encontrado.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </main>
-</body>
-</html>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<?php require_once 'includes/footer_admin.php'; ?>

@@ -1,7 +1,6 @@
 <?php
-// 1. O Guardião: Nos dá o $id_usuario_logado
-require_once 'verifica_login.php'; 
-require_once '../config/database.php';
+// 1. INCLUI O HEADER DO ADMIN (Protege a página, nos dá $pdo e $id_usuario_logado)
+require_once 'includes/header_admin.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['id'];
@@ -12,17 +11,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // 3. EXECUTAR O UPDATE NO BANCO
-        // --- MUDANÇA AQUI ---
-        // Adicionamos "AND id_usuario = :id_usuario" ao WHERE
-        // Isso garante que um usuário só possa ATUALIZAR suas PRÓPRIAS categorias.
-        $sql = "UPDATE categorias SET nome = :nome WHERE id = :id AND id_usuario = :id_usuario";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
+        // Lógica de 3 Papéis:
+        // Admin Master pode editar qualquer categoria
+        // Admin Loja só pode editar a sua
+        
+        $sql = "UPDATE categorias SET nome = :nome WHERE id = :id";
+        $params = [
             ':nome' => $nome,
-            ':id'   => $id,
-            ':id_usuario' => $id_usuario_logado
-        ]);
+            ':id'   => $id
+        ];
+
+        if ($_SESSION['role'] === 'admin_loja') {
+            $sql .= " AND id_usuario = :id_usuario";
+            $params[':id_usuario'] = $id_usuario_logado;
+        }
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
         
         header("Location: categorias.php?status=editada");
         exit();

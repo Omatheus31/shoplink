@@ -1,116 +1,92 @@
 <?php
-// 1. O Guardião: Nos dá o $id_usuario_logado
-require_once 'verifica_login.php'; 
-require_once '../config/database.php';
+// 1. INCLUI O HEADER DO ADMIN (que já conecta ao $pdo e protege a página)
+$titulo_pagina = "Adicionar Produto"; 
+require_once 'includes/header_admin.php';
 
-// Busca todas as categorias PARA O DROPDOWN
+// Busca as categorias do usuário logado para o dropdown
 try {
-    // --- MUDANÇA AQUI ---
-    // Busca apenas as categorias do usuário logado
     $query_categorias = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
     $stmt_categorias = $pdo->prepare($query_categorias);
     $stmt_categorias->execute([':id_usuario' => $id_usuario_logado]);
     $categorias = $stmt_categorias->fetchAll();
-
 } catch (PDOException $e) {
     $erro_categorias = "Não foi possível carregar as categorias.";
 }
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adicionar Novo Produto - Admin Shoplink</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        select {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-        }
-        .alert-sucesso {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-    </style>
-</head>
-<body>
-    <header class="main-header" style="padding: 15px; margin-bottom: 0;">
-        <h1>Painel de Administração</h1>
-        <nav>
-            <a href="index.php" style="color: white; margin-right: 15px;">Dashboard</a>
-            <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
-            <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
-            <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
-            <a href="adicionar_produto.php" style="color: white; font-weight: bold; margin-right: 15px;">Adicionar Produto</a>
-            <a href="../logout.php" style="color: #ffcccc; margin-right: 15px;">Sair</a>
-        </nav>
-    </header>
 
-    <main class="container">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Adicionar Novo Produto</h1>
+    <a href="produtos.php" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left-circle-fill"></i> Voltar para Produtos
+    </a>
+</div>
 
-        <?php if (isset($_GET['status']) && $_GET['status'] === 'sucesso'): ?>
-            <div class="alert alert-sucesso">
-                Produto salvo com sucesso!
-            </div>
-        <?php endif; ?>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
 
-        <h2>Adicionar Novo Produto</h2>
-
-        <form action="salvar_produto.php" method="post" enctype="multipart/form-data">
-            <div>
-                <label for="nome">Nome do Produto:</label>
-                <input type="text" id="nome" name="nome" required>
-            </div>
-
-            <div>
-                <label for="categoria">Categoria:</label>
-                <select id="categoria" name="id_categoria">
-                    <option value="">Selecione uma categoria (opcional)</option>
-                    <?php if (isset($categorias)): ?>
-                        <?php foreach ($categorias as $categoria): ?>
-                            <option value="<?php echo $categoria['id']; ?>">
-                                <?php echo htmlspecialchars($categoria['nome']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-                <?php if (isset($erro_categorias)): ?>
-                    <p style="color: red;"><?php echo $erro_categorias; ?></p>
+                <!-- Alerta de sucesso -->
+                <?php if (isset($_GET['status']) && $_GET['status'] === 'sucesso'): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill"></i> Produto salvo com sucesso!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 <?php endif; ?>
-            </div>
 
-            <div>
-                <label for="descricao">Descrição:</label>
-                <textarea id="descricao" name="descricao" rows="4"></textarea>
-            </div>
-            <div>
-                <label for="preco">Preço (R$):</label>
-                <input type="number" id="preco" name="preco" step="0.01" min="0.01" required>
-            </div>
-            <div>
-                <label for="imagem">Imagem do Produto:</label>
-                <input type="file" id="imagem" name="imagem" accept="image/*" required>
-            </div>
-            <div>
-                <button type="submit">Salvar Produto</button>
-            </div>
-        </form>
-    </main>
+                <form action="salvar_produto.php" method="post" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="nome" name="nome" placeholder="Nome do Produto" required>
+                                <label for="nome">Nome do Produto</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control" id="preco" name="preco" step="0.01" min="0.01" placeholder="Preço (R$)" required>
+                                <label for="preco">Preço (R$)</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="categoria" name="id_categoria">
+                            <option value="">Selecione uma categoria (opcional)</option>
+                            <?php if (isset($categorias)): ?>
+                                <?php foreach ($categorias as $categoria): ?>
+                                    <option value="<?php echo $categoria['id']; ?>">
+                                        <?php echo htmlspecialchars($categoria['nome']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                        <label for="categoria">Categoria</label>
+                        <?php if (isset($erro_categorias)): ?>
+                            <small class="text-danger"><?php echo $erro_categorias; ?></small>
+                        <?php endif; ?>
+                    </div>
 
-    <footer>
-        <p>&copy; <?php echo date('Y'); ?> Shoplink</p>
-    </footer>
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" id="descricao" name="descricao" placeholder="Descrição" style="height: 100px"></textarea>
+                        <label for="descricao">Descrição</label>
+                    </div>
 
-</body>
-</html>
+                    <div class="mb-3">
+                        <label for="imagem" class="form-label">Imagem do Produto (Obrigatório)</label>
+                        <input class="form-control" type="file" id="imagem" name="imagem" accept="image/*" required>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save-fill"></i> Salvar Produto
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php require_once 'includes/footer_admin.php'; ?>

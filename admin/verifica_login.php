@@ -2,18 +2,23 @@
 // 1. INICIA A SESSÃO
 session_start();
 
-// 2. VERIFICA SE A SESSÃO DO USUÁRIO NÃO EXISTE
+// 2. VERIFICA SE ESTÁ LOGADO
 if (!isset($_SESSION['id_usuario'])) {
-    
-    // Captura a URL que o usuário estava tentando acessar (ex: /shoplink/admin/categorias.php)
+    // Não está logado
     $redirect_url = urlencode($_SERVER['REQUEST_URI']);
-    
-    // Redireciona para o login, passando a URL de destino como um parâmetro
     header("Location: ../login.php?erro=acesso_negado&redirect_url=" . $redirect_url);
     exit();
 }
 
-// Se o script chegou até aqui, o usuário está logado.
+// 3. VERIFICA SE TEM O CARGO CORRETO
+if ($_SESSION['role'] !== 'admin_master' && $_SESSION['role'] !== 'admin_loja') {
+    // Está logado, mas é um 'cliente'
+    // Chuta ele para fora do admin, enviando para o catálogo
+    header("Location: ../index.php"); 
+    exit();
+}
+
+// Se o script chegou até aqui, o utilizador está LOGADO e é um ADMIN.
 $id_usuario_logado = $_SESSION['id_usuario'];
 $nome_loja_logado = $_SESSION['nome_loja'];
 ?>

@@ -7,6 +7,7 @@ require_once 'config/database.php';
 
 // INCLUI O NOVO CABEÇALHO BOOTSTRAP
 // A sessão é iniciada DENTRO deste arquivo
+$titulo_pagina = "Meu Carrinho"; 
 require_once 'includes/header_public.php';
 
 // Se o header_public não iniciou a sessão, ou o ID não está lá, algo está errado
@@ -31,8 +32,6 @@ try {
 }
 
 $endereco_salvo = htmlspecialchars($usuario['endereco_rua']) . ', ' . htmlspecialchars($usuario['endereco_numero']) . ' - ' . htmlspecialchars($usuario['endereco_bairro']) . ', ' . htmlspecialchars($usuario['endereco_cidade']) . ' - ' . htmlspecialchars($usuario['endereco_estado']);
-
-$titulo_pagina = "Meu Carrinho"; 
 ?>
 
 <!-- =============================================== -->
@@ -57,9 +56,7 @@ $titulo_pagina = "Meu Carrinho";
 
     <!-- Coluna da Direita (Resumo e Checkout) -->
     <div class="col-lg-4">
-        <!-- ======================================================= -->
-        <!-- A CORREÇÃO DO BUG ANTERIOR ESTÁ AQUI: id="checkout-form" -->
-        <!-- ======================================================= -->
+        <!-- Div do Checkout (com ID corrigido) -->
         <div class="card shadow-sm border-0" id="checkout-form">
             <div class="card-header bg-white py-3">
                 <h3 class="h5 mb-0">Resumo do Pedido</h3>
@@ -90,14 +87,11 @@ $titulo_pagina = "Meu Carrinho";
         </div>
 
         <!-- Div de Sucesso (escondida) -->
+        <!-- ESTE DIV NÃO É MAIS USADO, MAS PODE FICAR -->
         <div id="checkout-sucesso" style="display: none;" class="alert alert-success text-center mt-3 p-4 shadow-sm">
-            <!-- JS vai preencher aqui -->
         </div>
     </div>
 </div>
-
-<!-- Notificação Toast (o HTML não muda) -->
-<div id="toast-notification"></div>
 
 <!-- =============================================== -->
 <!-- FIM DO CONTEÚDO DA PÁGINA -->
@@ -113,8 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartTotalElement = document.getElementById('cart-total');
     const checkoutForm = document.getElementById('checkout-form'); // Agora vai funcionar
     const concluirBtn = document.getElementById('concluir-pedido-btn');
-    const clienteNome = "<?php echo htmlspecialchars($usuario['nome_loja']); ?>";
-    const clienteTelefone = "<?php echo htmlspecialchars($usuario['telefone']); ?>";
     const cart = JSON.parse(localStorage.getItem('shoplinkCart')) || [];
 
     // --- 2. FUNÇÃO PRINCIPAL PARA MOSTRAR O CARRINHO ---
@@ -132,21 +124,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        if (checkoutForm) { 
+            checkoutForm.style.display = 'block'; 
+        }
+        
         const listGroup = document.createElement('ul');
         listGroup.className = 'list-group list-group-flush';
 
         cart.forEach(item => {
-            // --- VERIFICAÇÃO DE SEGURANÇA (AQUI ESTÁ A CORREÇÃO) ---
             if (!item || item.preco === undefined || item.preco === null) {
-                console.warn("Item corrompido no carrinho, a ignorar:", item);
-                return; // Pula este item corrompido
+                console.warn("Item corrompido no carrinho, ignorando:", item);
+                return; 
             }
-            // --- FIM DA VERIFICAÇÃO ---
-
-            validItemsInCart++; // Conta o item válido
+            validItemsInCart++;
             const itemTotal = item.preco * item.quantity;
             total += itemTotal;
-
             const li = document.createElement('li');
             li.className = 'list-group-item d-flex align-items-center px-0';
             li.innerHTML = `
@@ -160,23 +152,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="bi bi-trash-fill"></i>
                 </button>
             `;
-            listGroup.appendChild(li); // Adiciona o item à lista
+            listGroup.appendChild(li);
         });
 
-        cartItemsContainer.appendChild(listGroup); // Adiciona a lista ao container
+        cartItemsContainer.appendChild(listGroup);
         cartTotalElement.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         addRemoveEvents();
 
-        // Se, depois de filtrar, não sobrou nenhum item válido
         if (validItemsInCart === 0) {
             cartItemsContainer.innerHTML = '<p class="text-muted">Seu carrinho está vazio (itens inválidos foram removidos).</p>';
             cartTotalElement.innerText = 'R$ 0,00';
             if (checkoutForm) { 
                 checkoutForm.style.display = 'none'; 
-            }
-        } else {
-             if (checkoutForm) { 
-                checkoutForm.style.display = 'block'; 
             }
         }
     }
@@ -199,11 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveCart();
         displayCart();
     }
-    function htmlspecialchars(str) {
-         if (!str) return '';
-         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-    }
-
+    
     // --- 4. FUNÇÃO DE CHECKOUT (ENVIO DO PEDIDO) ---
     concluirBtn.addEventListener('click', async () => {
         concluirBtn.disabled = true;
@@ -218,23 +201,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await response.json();
 
+            // --- MUDANÇA CRÍTICA AQUI ---
             if (result.sucesso) {
+                // SUCESSO!
+                
+                // 1. Limpa o carrinho do localStorage
                 localStorage.removeItem('shoplinkCart');
-                document.getElementById('cart-items').style.display = 'none';
-                cartTotalElement.style.display = 'none';
-                checkoutForm.style.display = 'none';
-
-                const sucessoDiv = document.getElementById('checkout-sucesso');
-                sucessoDiv.innerHTML = `
-                    <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Pedido Nº ${result.id_pedido} Recebido!</h4>
-                    <p>Obrigado, ${htmlspecialchars(clienteNome)}! Já estamos separando seu pedido.</p>
-                    <hr>
-                    <p class="mb-0">Entraremos em contato em breve pelo número <strong>${htmlspecialchars(clienteTelefone)}</strong> para confirmar o pagamento e a entrega.</p>
-                    <a href="index.php" class="btn btn-success mt-3">Voltar ao Catálogo</a>
-                `;
-                sucessoDiv.style.display = 'block';
+                
+                // 2. Redireciona para a página de pagamento
+                window.location.href = `pagamento.php?id_pedido=${result.id_pedido}`;
 
             } else {
+                // Se der erro, mostra o alerta
                 alert('Erro ao processar o pedido: ' + (result.mensagem || 'Tente novamente.'));
                 concluirBtn.disabled = false;
                 concluirBtn.innerText = 'Concluir pedido';

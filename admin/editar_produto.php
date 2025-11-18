@@ -1,35 +1,35 @@
 <?php
-// 1. O Guardião: Nos dá o $id_usuario_logado
-require_once 'verifica_login.php'; 
-require_once '../config/database.php';
+// 1. INCLUI O HEADER DO ADMIN
+$titulo_pagina = "Editar Produto"; 
+require_once 'includes/header_admin.php';
 
-// 1. VERIFICAR SE O ID FOI PASSADO PELA URL
+// 2. BUSCA DO PRODUTO (com segurança de 3 papéis)
 if (isset($_GET['id'])) {
-    $id = $_GET['id'];
+    $id_produto = (int)$_GET['id'];
+    
+    $sql_produto = "SELECT * FROM produtos WHERE id = :id_produto";
+    $params = [':id_produto' => $id_produto];
 
+    // Admin Loja SÓ PODE editar o seu
+    if ($_SESSION['role'] === 'admin_loja') {
+        $sql_produto .= " AND id_usuario = :id_usuario";
+        $params[':id_usuario'] = $id_usuario_logado;
+    }
+    // Admin Master pode editar qualquer um
+    
     try {
-        // 2. BUSCAR O PRODUTO ESPECÍFICO
-        // --- MUDANÇA AQUI ---
-        // SÓ busca o produto se o ID corresponder E pertencer ao usuário logado
-        $sql_produto = "SELECT * FROM produtos WHERE id = :id AND id_usuario = :id_usuario";
         $stmt_produto = $pdo->prepare($sql_produto);
-        $stmt_produto->execute([
-            ':id' => $id,
-            ':id_usuario' => $id_usuario_logado
-        ]);
+        $stmt_produto->execute($params);
         $produto = $stmt_produto->fetch();
 
-        // Se o produto não for encontrado (ou não pertencer ao usuário),
-        // redireciona para a lista.
         if (!$produto) {
             header("Location: produtos.php");
             exit();
         }
-
-        // 3. BUSCAR AS CATEGORIAS DO USUÁRIO PARA O DROPDOWN
-        $query_categorias = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
-        $stmt_categorias = $pdo->prepare($query_categorias);
-        $stmt_categorias->execute([':id_usuario' => $id_usuario_logado]);
+        
+        // Busca as categorias do usuário DONO DO PRODUTO (para o dropdown)
+        $stmt_categorias = $pdo->prepare("SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC");
+        $stmt_categorias->execute([':id_usuario' => $produto['id_usuario']]);
         $categorias = $stmt_categorias->fetchAll();
 
     } catch (PDOException $e) {
@@ -40,84 +40,76 @@ if (isset($_GET['id'])) {
     exit();
 }
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Produto - Admin Shoplink</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        select {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
-    <header class="main-header" style="padding: 15px; margin-bottom: 0;">
-        <h1>Painel de Administração</h1>
-        <nav>
-            <a href="index.php" style="color: white; margin-right: 15px;">Dashboard</a>
-            <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
-            <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
-            <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
-            <a href="adicionar_produto.php" style="color: white;  font-weight: bold;">Adicionar Produto</a>
-            <a href="../logout.php" style="color: #ffcccc; margin-left: auto;">Sair</a>
-        </nav>
-    </header>
 
-    <main class="container">
-        <h2>Editar Produto: <?php echo htmlspecialchars($produto['nome']); ?></h2>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Editar Produto</h1>
+    <a href="produtos.php" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left-circle-fill"></i> Voltar para Produtos
+    </a>
+</div>
 
-        <form action="atualizar_produto.php" method="post" enctype="multipart/form-data">
-            
-            <input type="hidden" name="id" value="<?php echo $produto['id']; ?>">
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
 
-            <div>
-                <label for="nome">Nome do Produto:</label>
-                <input type="text" id="nome" name="nome" value="<?php echo htmlspecialchars($produto['nome']); ?>" required>
+                <form action="atualizar_produto.php" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="id" value="<?php echo $produto['id']; ?>">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="nome" name="nome" placeholder="Nome do Produto" value="<?php echo htmlspecialchars($produto['nome']); ?>" required>
+                                <label for="nome">Nome do Produto</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control" id="preco" name="preco" step="0.01" min="0.01" placeholder="Preço (R$)" value="<?php echo $produto['preco']; ?>" required>
+                                <label for="preco">Preço (R$)</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="categoria" name="id_categoria">
+                            <option value="">Selecione uma categoria (opcional)</option>
+                            <?php if (isset($categorias)): ?>
+                                <?php foreach ($categorias as $categoria): ?>
+                                    <option value="<?php echo $categoria['id']; ?>" 
+                                        <?php echo ($produto['id_categoria'] == $categoria['id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($categoria['nome']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                        <label for="categoria">Categoria</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" id="descricao" name="descricao" placeholder="Descrição" style="height: 100px"><?php echo htmlspecialchars($produto['descricao']); ?></textarea>
+                        <label for="descricao">Descrição</label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="imagem" class="form-label">Alterar Imagem do Produto (opcional)</label>
+                        <input class="form-control" type="file" id="imagem" name="imagem" accept="image/*">
+                        <div class="mt-2">
+                            <small class="text-muted">Imagem atual:</small>
+                            <img src="../uploads/<?php echo htmlspecialchars($produto['imagem_url']); ?>" alt="Imagem atual" class="img-thumbnail" width="100">
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save-fill"></i> Atualizar Produto
+                        </button>
+                    </div>
+                </form>
+
             </div>
+        </div>
+    </div>
+</div>
 
-            <div>
-                <label for="categoria">Categoria:</label>
-                <select id="categoria" name="id_categoria">
-                    <option value="">Selecione uma categoria (opcional)</option>
-                    <?php if (isset($categorias)): ?>
-                        <?php foreach ($categorias as $categoria): ?>
-                            <option value="<?php echo $categoria['id']; ?>" 
-                                <?php echo ($produto['id_categoria'] == $categoria['id']) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($categoria['nome']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </select>
-            </div>
-
-            <div>
-                <label for="descricao">Descrição:</label>
-                <textarea id="descricao" name="descricao" rows="4"><?php echo htmlspecialchars($produto['descricao']); ?></textarea>
-            </div>
-
-            <div>
-                <label for="preco">Preço (R$):</label>
-                <input type="number" id="preco" name="preco" step="0.01" min="0.01" value="<?php echo $produto['preco']; ?>" required>
-            </div>
-
-            <div>
-                <label for="imagem">Alterar Imagem do Produto (opcional):</label>
-                <input type="file" id="imagem" name="imagem" accept="image/*">
-                <p>Imagem atual:</p>
-                <img src="../uploads/<?php echo htmlspecialchars($produto['imagem_url']); ?>" alt="Imagem atual" width="100">
-            </div>
-
-            <div>
-                <button type="submit">Atualizar Produto</button>
-            </div>
-        </form>
-    </main>
-</body>
-</html>
+<?php require_once 'includes/footer_admin.php'; ?>

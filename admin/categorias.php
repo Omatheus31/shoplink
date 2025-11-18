@@ -1,31 +1,27 @@
 <?php
-// 1. O Guardião: Inicia a sessão e nos dá o $id_usuario_logado
-require_once 'verifica_login.php'; 
+// 1. INCLUI O HEADER DO ADMIN (que já conecta ao $pdo e protege a página)
+$titulo_pagina = "Categorias";
+require_once 'includes/header_admin.php';
 
-// 2. Conexão com o banco
-require_once '../config/database.php';
-
-// PARTE 1: Processar o formulário de NOVA CATEGORIA (se enviado)
+// PARTE 1: Processar o formulário de NOVA CATEGORIA
+$erro = '';
+$sucesso = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nome_categoria'])) {
     $nome_categoria = trim($_POST['nome_categoria']);
     
     if (!empty($nome_categoria)) {
         try {
-            // --- MUDANÇA AQUI ---
-            // Agora também inserimos o id_usuario do usuário logado
             $sql_insert = "INSERT INTO categorias (nome, id_usuario) VALUES (:nome, :id_usuario)";
             $stmt_insert = $pdo->prepare($sql_insert);
             $stmt_insert->execute([
                 ':nome' => $nome_categoria,
-                ':id_usuario' => $id_usuario_logado // Variável vinda do verifica_login.php
+                ':id_usuario' => $id_usuario_logado
             ]);
-            
-            header("Location: categorias.php?status=criada");
-            exit();
+            $sucesso = "Categoria \"$nome_categoria\" criada com sucesso!";
         } catch (PDOException $e) {
-            // (Tratamento de erro não muda)
             if ($e->getCode() == 23000) {
-                $erro = "Erro: Esta categoria já existe.";
+                // Erro de 'nome_por_usuario' (duplicado)
+                $erro = "Erro: Você já possui uma categoria com este nome.";
             } else {
                 $erro = "Erro ao salvar categoria: " . $e->getMessage();
             }
@@ -35,101 +31,118 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nome_categoria'])) {
     }
 }
 
-// PARTE 2: Buscar todas as categorias existentes para listar
+// PARTE 2: Buscar categorias (com lógica de 3 papéis)
+$sql_categorias = "";
+$params_cat = [];
+
+if ($_SESSION['role'] === 'admin_master') {
+    // Admin Master vê TUDO
+    $sql_categorias = "SELECT c.*, u.nome_loja FROM categorias c JOIN usuarios u ON c.id_usuario = u.id ORDER BY u.nome_loja, c.nome ASC";
+} else {
+    // Admin Loja vê SÓ O DELE
+    $sql_categorias = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
+    $params_cat[':id_usuario'] = $id_usuario_logado;
+}
+
 try {
-    // --- MUDANÇA AQUI ---
-    // Agora selecionamos APENAS as categorias ONDE o id_usuario é o do logado
-    $query = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
-    $stmt = $pdo->prepare($query);
-    $stmt->execute([':id_usuario' => $id_usuario_logado]); // Passamos o ID para a query
-    $categorias = $stmt->fetchAll();
-    
+    $stmt_cat = $pdo->prepare($sql_categorias);
+    $stmt_cat->execute($params_cat);
+    $categorias = $stmt_cat->fetchAll();
 } catch (PDOException $e) {
-    die("Erro ao buscar categorias: " . $e->getMessage());
+    echo '<div class="alert alert-danger">Erro ao buscar categorias: ' . $e->getMessage() . '</div>';
 }
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciar Categorias - Admin</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        .admin-table th { background-color: #f2f2f2; }
-        .admin-table tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        .action-btn { padding: 5px 10px; text-decoration: none; border-radius: 4px; color: white; margin-right: 5px; font-size: 0.9em; }
-        .edit-btn { background-color: #3498db; }
-        .delete-btn { background-color: #e74c3c; border: none; cursor: pointer; font-family: inherit; }
 
-        .form-container { background-color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
-        .form-container input[type="text"] { width: 80%; padding: 10px; }
-        .form-container button { padding: 10px 15px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <header class="main-header" style="padding: 15px; margin-bottom: 0;">
-        <h1>Painel de Administração</h1>
-        <nav>
-            <a href="index.php" style="color: white; margin-right: 15px;">Dashboard</a>
-            <a href="pedidos.php" style="color: white; margin-right: 15px;">Pedidos</a>
-            <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
-            <a href="categorias.php" style="color: white; margin-right: 15px; font-weight: bold;">Categorias</a>
-            <a href="adicionar_produto.php" style="color: white; margin-right: 15px;">Adicionar Produto</a>
-            <a href="../logout.php" style="color: #ffcccc; margin-right: 15px;">Sair</a>
-        </nav>
-    </header>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Gerenciar Categorias</h1>
+</div>
 
-    <main class="container">
-        <h2>Gerenciar Categorias</h2>
-
-        <div class="form-container">
-            <h3>Adicionar Nova Categoria</h3>
-            <?php if (isset($erro)): ?>
-                <p style="color: red;"><?php echo $erro; ?></p>
-            <?php endif; ?>
-            <form action="categorias.php" method="POST">
-                <label for="nome_categoria">Nome:</label>
-                <input type="text" id="nome_categoria" name="nome_categoria" required>
-                <button type="submit">Salvar Categoria</button>
-            </form>
-        </div>
-
-        <h3>Categorias Existentes</h3>
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($categorias): ?>
-                    <?php foreach ($categorias as $categoria): ?>
-                        <tr>
-                            <td><?php echo $categoria['id']; ?></td>
-                            <td><?php echo htmlspecialchars($categoria['nome']); ?></td>
-                            <td>
-                                <a href="editar_categoria.php?id=<?php echo $categoria['id']; ?>" class="action-btn edit-btn">Editar</a>
-                                
-                                <form action="excluir_categoria.php" method="POST" style="display: inline;" onsubmit="return confirm('Atenção: excluir esta categoria fará com que todos os produtos nela sejam listados como SEM CATEGORIA. Deseja continuar?');">
-                                    <input type="hidden" name="id" value="<?php echo $categoria['id']; ?>">
-                                    <button type="submit" class="action-btn delete-btn">Excluir</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="3">Nenhuma categoria encontrada.</td>
-                    </tr>
+<div class="row g-4">
+    <!-- Coluna do Formulário -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h3 class="h5 mb-0"><i class="bi bi-plus-circle-fill"></i> Adicionar Nova</h3>
+            </div>
+            <div class="card-body">
+                <!-- Alertas de sucesso ou erro -->
+                <?php if ($erro): ?>
+                    <div class="alert alert-danger"><?php echo $erro; ?></div>
                 <?php endif; ?>
-            </tbody>
-        </table>
-    </main>
-</body>
-</html>
+                <?php if ($sucesso): ?>
+                    <div class="alert alert-success"><?php echo $sucesso; ?></div>
+                <?php endif; ?>
+
+                <form action="categorias.php" method="POST">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="nome_categoria" name="nome_categoria" placeholder="Nome da Categoria" required>
+                        <label for="nome_categoria">Nome da Categoria</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save-fill"></i> Salvar Categoria
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna da Tabela -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h3 class="h5 mb-0"><i class="bi bi-list-ul"></i> Categorias Existentes</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="ps-4">ID</th>
+                                <th scope="col">Nome</th>
+                                <?php if ($_SESSION['role'] === 'admin_master'): ?>
+                                    <th scope="col">Loja</th>
+                                <?php endif; ?>
+                                <th scope="col" class="text-end pe-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (isset($categorias) && $categorias): ?>
+                                <?php foreach ($categorias as $categoria): ?>
+                                    <tr>
+                                        <td class="ps-4"><?php echo $categoria['id']; ?></td>
+                                        <td class="fw-bold"><?php echo htmlspecialchars($categoria['nome']); ?></td>
+                                        
+                                        <?php if ($_SESSION['role'] === 'admin_master'): ?>
+                                            <td><?php echo htmlspecialchars($categoria['nome_loja']); ?></td>
+                                        <?php endif; ?>
+                                        
+                                        <td class="text-end pe-4">
+                                            <a href="editar_categoria.php?id=<?php echo $categoria['id']; ?>" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </a>
+                                            <form action="excluir_categoria.php" method="POST" class="d-inline" onsubmit="return confirm('Atenção: excluir esta categoria fará com que todos os produtos nela sejam listados como SEM CATEGORIA. Deseja continuar?');">
+                                                <input type="hidden" name="id" value="<?php echo $categoria['id']; ?>">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="<?php echo ($_SESSION['role'] === 'admin_master') ? '4' : '3'; ?>" class="text-center py-5 text-muted">
+                                        <i class="bi bi-tags fs-1 d-block mb-2"></i>
+                                        Nenhuma categoria encontrada.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php require_once 'includes/footer_admin.php'; ?>

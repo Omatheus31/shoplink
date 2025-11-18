@@ -4,7 +4,7 @@ require_once 'config/database.php';
 
 try {
     // 2. BUSCAR AS CATEGORIAS
-    $query_categorias = "SELECT * FROM categorias WHERE id_usuario = 1";
+    $query_categorias = "SELECT * FROM categorias WHERE id_usuario = 2";
     $stmt_categorias = $pdo->query($query_categorias);
     $categorias = $stmt_categorias->fetchAll();
 
@@ -19,7 +19,7 @@ try {
     // 4. QUERY DE PRODUTOS
     $params = [];
     $query_produtos = "SELECT * FROM produtos WHERE id_usuario = :id_usuario_loja"; // Loja Principal ID 1
-    $params[':id_usuario_loja'] = 1;
+    $params[':id_usuario_loja'] = 2;
 
     if ($id_categoria_filtro) {
         $query_produtos .= " AND id_categoria = :id_categoria";

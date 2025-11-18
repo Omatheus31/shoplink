@@ -2,7 +2,12 @@
 // O PHP no topo não muda
 session_start();
 if (isset($_SESSION['id_usuario'])) {
-    header("Location: admin/index.php");
+    // Redireciona para o local correto dependendo do 'role'
+    if ($_SESSION['role'] === 'admin_master' || $_SESSION['role'] === 'admin_loja') {
+        header("Location: admin/index.php");
+    } else {
+        header("Location: minha_conta.php"); // Clientes vão para "Minha Conta"
+    }
     exit();
 }
 ?>
@@ -33,8 +38,8 @@ if (isset($_SESSION['id_usuario'])) {
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
-                        <h1 class="h3 fw-bold">Shoplink</h1>
-                        <p class="text-muted">Acesse seu painel</p>
+                        <h1 class="h3 fw-bold"><i class="bi bi-shop text-primary"></i> Shoplink</h1>
+                        <p class="text-muted">Acesse sua conta para continuar</p>
                     </div>
 
                     <?php 
@@ -50,11 +55,15 @@ if (isset($_SESSION['id_usuario'])) {
                             case 'carrinho_login':
                                 $erro = 'Você precisa fazer login para ver seu carrinho.';
                                 break;
+                            case 'usuario_invalido':
+                                $erro = 'Seu usuário não foi encontrado. Por favor, faça login novamente.';
+                                break;
                         }
                         if ($erro) {
                             echo '<div class="alert alert-danger">' . $erro . '</div>';
                         }
                     }
+                    // Mensagem de sucesso após cadastro
                     if (isset($_GET['status']) && $_GET['status'] === 'cadastro_sucesso') {
                          echo '<div class="alert alert-success">Cadastro realizado com sucesso! Faça o login.</div>';
                     }
@@ -62,9 +71,16 @@ if (isset($_SESSION['id_usuario'])) {
 
                     <form action="processa_login.php" method="POST">
                         <?php
-                        if (isset($_SESSION['redirect_url_apos_login'])) {
-                            echo '<input type="hidden" name="redirect_url" value="' . htmlspecialchars($_SESSION['redirect_url_apos_login']) . '">';
+                        // Lógica para o redirecionamento pós-login
+                        $redirect_url = '';
+                        if (isset($_POST['redirect_url'])) { // Vindo de um post
+                            $redirect_url = htmlspecialchars($_POST['redirect_url']);
+                        } elseif (isset($_SESSION['redirect_url_apos_login'])) { // Vindo do carrinho
+                            $redirect_url = htmlspecialchars($_SESSION['redirect_url_apos_login']);
                             unset($_SESSION['redirect_url_apos_login']); // Limpa a sessão
+                        }
+                        if (!empty($redirect_url)) {
+                            echo '<input type="hidden" name="redirect_url" value="' . $redirect_url . '">';
                         }
                         ?>
                         <div class="form-floating mb-3">
@@ -75,6 +91,11 @@ if (isset($_SESSION['id_usuario'])) {
                             <input type="password" class="form-control" id="senha" name="senha" placeholder="Senha" required>
                             <label for="senha">Senha</label>
                         </div>
+                        
+                        <div class="text-end mb-3">
+                            <a href="esqueci_senha.php" class="small text-decoration-none">Esqueceu sua senha?</a>
+                        </div>
+                        
                         <button type="submit" class="w-100 btn btn-lg btn-primary">Entrar</button>
                     </form>
 

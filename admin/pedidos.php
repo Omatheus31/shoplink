@@ -1,10 +1,9 @@
 <?php
-// 1. O Guardião: Nos dá o $id_usuario_logado
-require_once 'verifica_login.php'; 
-require_once '../config/database.php';
+// 1. INCLUI O HEADER DO ADMIN
+require_once 'includes/header_admin.php';
 
 try {
-    // Busca apenas os pedidos do utilizador logado
+    // Busca os pedidos
     $query = "SELECT id, nome_cliente, total_pedido, data_pedido, status 
               FROM pedidos 
               WHERE id_usuario = :id_usuario 
@@ -14,86 +13,76 @@ try {
     $pedidos = $stmt->fetchAll();
 
 } catch (PDOException $e) {
-    die("Erro ao buscar pedidos: " . $e->getMessage());
+    echo '<div class="alert alert-danger">Erro: ' . $e->getMessage() . '</div>';
 }
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciar Pedidos - Admin</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
-    <style>
-        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        .admin-table th { background-color: #f2f2f2; }
-        .admin-table tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        .status-pendente { background-color: #f39c12; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; }
-        .status-concluido { background-color: #27ae60; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; }
-    </style>
-</head>
-<body>
-    <header class="main-header">
-        <h1>Painel de Administração</h1>
-        <nav>
-            <a href="index.php" style="color: white; margin-right: 15px;">Dashboard</a>
-            <a href="pedidos.php" style="color: white; margin-right: 15px; font-weight: bold;">Pedidos</a>
-            <a href="produtos.php" style="color: white; margin-right: 15px;">Produtos</a>
-            <a href="categorias.php" style="color: white; margin-right: 15px;">Categorias</a>
-            <a href="adicionar_produto.php" style="color: white;">Adicionar Produto</a>
-            <a href="../logout.php" style="color: #ffcccc; margin-left: auto;">Sair</a>
-        </nav>
-    </header>
 
-    <main class="container">
-        <h2>Pedidos Recebidos</h2>
-        
-        <?php if (isset($_GET['status_update']) && $_GET['status_update'] == 'sucesso'): ?>
-            <div style="padding: 15px; margin-bottom: 20px; border: 1px solid #c3e6cb; border-radius: 4px; color: #155724; background-color: #d4edda;">
-                Status do pedido atualizado com sucesso!
-            </div>
-        <?php endif; ?>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Pedidos</h1>
+</div>
 
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Nº Pedido</th>
-                    <th>Cliente</th>
-                    <th>Valor Total</th>
-                    <th>Data</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($pedidos): ?>
-                    <?php foreach ($pedidos as $pedido): ?>
+<?php if (isset($_GET['status_update']) && $_GET['status_update'] == 'sucesso'): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill"></i> Status do pedido atualizado com sucesso!
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" class="ps-4">Nº Pedido</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Valor</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($pedidos): ?>
+                        <?php foreach ($pedidos as $pedido): ?>
+                            <tr>
+                                <td class="ps-4 fw-bold">#<?php echo $pedido['id']; ?></td>
+                                <td><?php echo htmlspecialchars($pedido['nome_cliente']); ?></td>
+                                <td>R$ <?php echo number_format($pedido['total_pedido'], 2, ',', '.'); ?></td>
+                                <td><?php echo date('d/m/Y H:i', strtotime($pedido['data_pedido'])); ?></td>
+                                <td>
+                                    <?php
+                                    $status = $pedido['status'];
+                                    $badgeClass = 'bg-secondary'; // Padrão
+                                    
+                                    if ($status == 'Aguardando Pagamento') $badgeClass = 'bg-warning text-dark';
+                                    if ($status == 'Pago' || $status == 'Concluído') $badgeClass = 'bg-success';
+                                    if ($status == 'Enviado' || $status == 'Em Separação') $badgeClass = 'bg-info text-dark';
+                                    if ($status == 'Cancelado') $badgeClass = 'bg-danger';
+                                    ?>
+                                    <span class="badge rounded-pill <?php echo $badgeClass; ?>">
+                                        <?php echo htmlspecialchars($status); ?>
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="pedido_detalhe.php?id=<?php echo $pedido['id']; ?>" class="btn btn-sm btn-outline-primary">
+                                        Ver Detalhes
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
                         <tr>
-                            <td>
-                                <a href="pedido_detalhe.php?id=<?php echo $pedido['id']; ?>" style="font-weight: bold; text-decoration: none;">
-                                    #<?php echo $pedido['id']; ?>
-                                </a>
-                            </td>
-                            <td><?php echo htmlspecialchars($pedido['nome_cliente']); ?></td>
-                            <td>R$ <?php echo number_format($pedido['total_pedido'], 2, ',', '.'); ?></td>
-                            <td><?php echo date('d/m/Y H:i', strtotime($pedido['data_pedido'])); ?></td>
-                            <td>
-                                <?php if ($pedido['status'] == 'Aguardando Pagamento'): ?>
-                                    <span class="status-pendente"><?php echo $pedido['status']; ?></span>
-                                <?php else: ?>
-                                    <span class="status-concluido"><?php echo htmlspecialchars($pedido['status']); ?></span>
-                                <?php endif; ?>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Nenhum pedido encontrado.
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="5">Nenhum pedido encontrado.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </main>
-</body>
-</html>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<?php require_once 'includes/footer_admin.php'; ?>

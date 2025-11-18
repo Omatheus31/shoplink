@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (isset($_SESSION['id_usuario'])) {
-    header("Location: admin/index.php");
+    header("Location: index.php");
     exit();
 }
 ?>
@@ -12,19 +12,19 @@ if (isset($_SESSION['id_usuario'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crie sua Conta - Shoplink</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body { background-color: #f8f9fa; }
     </style>
 </head>
 <body>
     
-    <div class="container my-5">
-        <div class="row justify-content-center">
+    <div class="container my-5"> <div class="row justify-content-center">
             <div class="col-lg-7 col-md-10">
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4 p-md-5">
                         <div class="text-center mb-4">
-                            <h1 class="h3 fw-bold">Crie sua Conta de Cliente</h1>
+                            <h1 class="h3 fw-bold"><i class="bi bi-shop text-primary"></i> Crie sua Conta de Cliente</h1>
                             <p class="text-muted">Preencha seus dados para comprar.</p>
                         </div>
 
@@ -45,7 +45,7 @@ if (isset($_SESSION['id_usuario'])) {
                         ?>
 
                         <form action="processa_cadastro.php" method="POST">
-                            <h5 class="mb-3">Seus Dados</h5>
+                            <h5 class="mb-3 text-muted">1. Seus Dados</h5>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <div class="form-floating">
@@ -68,7 +68,7 @@ if (isset($_SESSION['id_usuario'])) {
                             </div>
 
                             <hr class="my-4">
-                            <h5 class="mb-3">Endereço de Entrega</h5>
+                            <h5 class="mb-3 text-muted">2. Endereço de Entrega</h5>
                             
                             <div class="row">
                                 <div class="col-md-4 mb-3">
@@ -120,7 +120,7 @@ if (isset($_SESSION['id_usuario'])) {
                             </div>
                             
                             <hr class="my-4">
-                            <h5 class="mb-3">Segurança</h5>
+                            <h5 class="mb-3 text-muted">3. Segurança</h5>
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">

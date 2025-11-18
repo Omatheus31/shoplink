@@ -23,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $complemento = trim($_POST['endereco_complemento']);
 
     // --- 5. VALIDAÇÃO DOS DADOS ---
-
     if ($senha !== $confirma_senha) {
         header("Location: cadastro.php?erro=senhas_nao_conferem");
         exit();
@@ -84,16 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':senha_hash' => $senha_hash
         ]);
 
-        // --- 9. LOGIN AUTOMÁTICO APÓS O CADASTRO ---
-        $id_novo_usuario = $pdo->lastInsertId();
-        
-        session_regenerate_id(true);
-        $_SESSION['id_usuario'] = $id_novo_usuario;
-        $_SESSION['nome_loja'] = $nome_loja;
-        $_SESSION['role'] = 'cliente'; // Define o papel na sessão
-
-        // --- 10. REDIRECIONA PARA O CATÁLOGO ---
-        header("Location: index.php"); 
+        // --- 9. MUDANÇA: NÃO FAZ LOGIN AUTOMÁTICO ---
+        // Em vez disso, redireciona para o login com mensagem de sucesso
+        header("Location: login.php?status=cadastro_sucesso"); 
         exit();
 
     } catch (PDOException $e) {
