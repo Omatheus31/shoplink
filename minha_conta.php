@@ -1,155 +1,170 @@
 <?php
-// 1. O GUARDIÃO! (O header_public.php vai iniciar a sessão)
+// minha_conta.php
 require_once 'config/database.php';
-
-// 2. INCLUI O NOVO CABEÇALHO BOOTSTRAP
-$titulo_pagina = "Minha Conta"; 
+$titulo_pagina = 'Meus Dados';
 require_once 'includes/header_public.php';
 
-// 3. Garante que o utilizador está logado
+// 1. VERIFICA LOGIN
 if (!isset($_SESSION['id_usuario'])) {
-    $_SESSION['redirect_url_apos_login'] = $_SERVER['REQUEST_URI'];
-    header("Location: login.php?erro=acesso_negado");
+    header('Location: login.php?erro=acesso_negado');
     exit();
 }
 
-$id_usuario_logado = $_SESSION['id_usuario'];
+$id = $_SESSION['id_usuario'];
+$mensagem_sucesso = '';
+$mensagem_erro = '';
 
-try {
-    // 4. BUSCA OS DADOS DO UTILIZADOR (para o perfil)
-    $stmt_usuario = $pdo->prepare("SELECT * FROM usuarios WHERE id = :id");
-    $stmt_usuario->execute([':id' => $id_usuario_logado]);
-    $usuario = $stmt_usuario->fetch();
+// 2. PROCESSA ATUALIZAÇÃO DE PERFIL
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'atualizar_perfil') {
+    try {
+        $nome = trim($_POST['nome']);
+        $email = trim($_POST['email']);
+        $senha_atual = $_POST['senha_atual'] ?? '';
+        $nova_senha = $_POST['nova_senha'] ?? '';
 
-    if (!$usuario) {
-        session_destroy();
-        header("Location: login.php?erro=usuario_invalido");
-        exit();
+        if (empty($nome) || empty($email)) {
+            throw new Exception('Nome e email são obrigatórios.');
+        }
+
+        // Busca a senha atual (hash) no banco para validar
+        $stmt_check = $pdo->prepare("SELECT senha_hash FROM usuarios WHERE id = :id");
+        $stmt_check->execute([':id' => $id]);
+        $usuario_atual = $stmt_check->fetch();
+
+        // --- LÓGICA DE ATUALIZAÇÃO ---
+        $sql = "UPDATE usuarios SET nome = :nome, email = :email, telefone = :telefone, 
+                endereco_rua = :rua, endereco_numero = :numero, endereco_bairro = :bairro, 
+                endereco_cidade = :cidade, endereco_estado = :estado";
+        
+        $params = [
+            ':nome' => $nome, ':email' => $email, ':telefone' => $_POST['telefone'],
+            ':rua' => $_POST['endereco_rua'], ':numero' => $_POST['endereco_numero'],
+            ':bairro' => $_POST['endereco_bairro'], ':cidade' => $_POST['endereco_cidade'],
+            ':estado' => $_POST['endereco_estado'], ':id' => $id
+        ];
+
+        // Se o usuário tentou digitar uma nova senha
+        if (!empty($nova_senha)) {
+            // 1. Verifica se digitou a senha atual
+            if (empty($senha_atual)) {
+                throw new Exception("Para alterar a senha, você deve informar sua senha atual.");
+            }
+            // 2. Verifica se a senha atual está correta
+            if (!password_verify($senha_atual, $usuario_atual['senha_hash'])) {
+                throw new Exception("A senha atual informada está incorreta.");
+            }
+            // 3. Verifica tamanho mínimo
+            if (strlen($nova_senha) < 6) {
+                throw new Exception("A nova senha deve ter no mínimo 6 caracteres.");
+            }
+
+            // Adiciona a nova senha na query
+            $sql .= ", senha_hash = :nova_senha";
+            $params[':nova_senha'] = password_hash($nova_senha, PASSWORD_DEFAULT);
+        }
+
+        $sql .= " WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        // Atualiza nome na sessão
+        $_SESSION['nome'] = $nome;
+        $mensagem_sucesso = "Dados atualizados com sucesso!";
+
+    } catch (Exception $e) {
+        $mensagem_erro = $e->getMessage();
     }
-
-    // 5. BUSCA O HISTÓRICO DE PEDIDOS DO UTILIZADOR
-    $sql_pedidos = "SELECT * FROM pedidos WHERE id_usuario = :id_usuario ORDER BY id DESC";
-    $stmt_pedidos = $pdo->prepare($sql_pedidos);
-    $stmt_pedidos->execute([':id_usuario' => $id_usuario_logado]);
-    $pedidos = $stmt_pedidos->fetchAll();
-
-} catch (PDOException $e) {
-    die("Erro ao buscar dados: " . $e->getMessage());
 }
 
-// Formata o endereço salvo para exibição
-$endereco_salvo = htmlspecialchars($usuario['endereco_rua']) . ', ' . htmlspecialchars($usuario['endereco_numero']) . ' - ' . htmlspecialchars($usuario['endereco_bairro']) . ', ' . htmlspecialchars($usuario['endereco_cidade']) . ' - ' . htmlspecialchars($usuario['endereco_estado']);
+// 3. BUSCA DADOS DO USUÁRIO PARA PREENCHER O FORMULÁRIO
+$stmt = $pdo->prepare('SELECT * FROM usuarios WHERE id = :id');
+$stmt->execute([':id' => $id]);
+$usuario = $stmt->fetch();
 ?>
 
-<!-- =============================================== -->
-<!-- INÍCIO DO CONTEÚDO DA PÁGINA (Refatorado) -->
-<!-- =============================================== -->
-
-<!-- Mensagem de Sucesso do Pagamento (com classes Bootstrap) -->
-<?php if (isset($_GET['status']) && $_GET['status'] == 'pagamento_processando'): ?>
-    <div class="alert alert-success text-center shadow-sm">
-        <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Obrigado!</h4>
-        <p>Seu pagamento está sendo processado. A loja foi notificada e entrará em contato em breve.</p>
+<?php if (isset($_GET['status']) && $_GET['status'] == 'sucesso'): ?>
+    <div class="alert alert-success text-center shadow-sm mb-4">
+        <h3><i class="bi bi-check-circle-fill"></i> Pedido Realizado!</h3>
+        <p>Obrigado pela compra. Acompanhe em <a href="meus_pedidos.php" class="alert-link">Meus Pedidos</a>.</p>
     </div>
 <?php endif; ?>
 
-<h2 class="mb-4">Minha Conta</h2>
+<?php if ($mensagem_sucesso): ?> <div class="alert alert-success"><?php echo $mensagem_sucesso; ?></div> <?php endif; ?>
+<?php if ($mensagem_erro): ?> <div class="alert alert-danger"><?php echo $mensagem_erro; ?></div> <?php endif; ?>
 
-<div class="row g-4">
-
-    <!-- Coluna da Esquerda (Perfil) -->
-    <div class="col-lg-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
-                <h3 class="h5 mb-0"><i class="bi bi-person-badge"></i> Meus Dados</h3>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <strong>Nome:</strong><br>
-                        <?php echo htmlspecialchars($usuario['nome_loja']); ?>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>E-mail:</strong><br>
-                        <?php echo htmlspecialchars($usuario['email']); ?>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Telefone:</strong><br>
-                        <?php echo htmlspecialchars($usuario['telefone']); ?>
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Endereço Principal:</strong><br>
-                        <?php echo $endereco_salvo; ?>
-                    </li>
-                </ul>
-                <a href="#" class="btn btn-outline-primary btn-sm mt-3">Editar Perfil</a>
-                <a href="#" class="btn btn-outline-danger btn-sm mt-3">Excluir Conta</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Coluna da Direita (Histórico de Pedidos) -->
+<div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
-                <h3 class="h5 mb-0"><i class="bi bi-receipt"></i> Meus Pedidos</h3>
+            <div class="card-header bg-white py-3 border-bottom">
+                <h4 class="h5 mb-0"><i class="bi bi-person-circle"></i> Editar Meus Dados</h4>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th scope="col">Nº Pedido</th>
-                                <th scope="col">Data</th>
-                                <th scope="col">Valor Total</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($pedidos): ?>
-                                <?php foreach ($pedidos as $pedido): ?>
-                                    <tr>
-                                        <td class_="fw-bold">#<?php echo $pedido['id']; ?></td>
-                                        <td><?php echo date('d/m/Y H:i', strtotime($pedido['data_pedido'])); ?></td>
-                                        <td>R$ <?php echo number_format($pedido['total_pedido'], 2, ',', '.'); ?></td>
-                                        <td>
-                                            <!-- Lógica de Cor do Status -->
-                                            <?php
-                                            $status = $pedido['status'];
-                                            $classe_status = 'status-aguardando'; // Padrão
-                                            if ($status == 'Concluído' || $status == 'Pago') $classe_status = 'status-concluido';
-                                            if ($status == 'Enviado') $classe_status = 'status-enviado';
-                                            if ($status == 'Cancelado') $classe_status = 'status-cancelado';
-                                            if ($status == 'Em Separação') $classe_status = 'status-separacao';
-                                            ?>
-                                            <span class="<?php echo $classe_status; ?>">
-                                                <?php echo htmlspecialchars($status); ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <a href="#" class="btn btn-sm btn-outline-secondary">Ver Detalhes</a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Você ainda não fez nenhum pedido.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div> <!-- fim .table-responsive -->
+            <div class="card-body p-4">
+                <form method="post" action="minha_conta.php">
+                    <input type="hidden" name="acao" value="atualizar_perfil">
+                    
+                    <h6 class="text-muted small text-uppercase mb-3">Informações Pessoais</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Nome Completo</label>
+                            <input type="text" name="nome" class="form-control" value="<?php echo htmlspecialchars($usuario['nome']); ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email</label>
+                            <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($usuario['email']); ?>" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">Telefone / WhatsApp</label>
+                            <input type="text" name="telefone" class="form-control" value="<?php echo htmlspecialchars($usuario['telefone'] ?? ''); ?>">
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="text-muted small text-uppercase mb-3">Endereço de Entrega Padrão</h6>
+                    
+                    <div class="row g-2 mb-2">
+                        <div class="col-9">
+                            <input type="text" name="endereco_rua" class="form-control" placeholder="Rua/Av" value="<?php echo htmlspecialchars($usuario['endereco_rua'] ?? ''); ?>">
+                        </div>
+                        <div class="col-3">
+                            <input type="text" name="endereco_numero" class="form-control" placeholder="Nº" value="<?php echo htmlspecialchars($usuario['endereco_numero'] ?? ''); ?>">
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <input type="text" name="endereco_bairro" class="form-control mb-2" placeholder="Bairro" value="<?php echo htmlspecialchars($usuario['endereco_bairro'] ?? ''); ?>">
+                        </div>
+                        <div class="col-8">
+                            <input type="text" name="endereco_cidade" class="form-control" placeholder="Cidade" value="<?php echo htmlspecialchars($usuario['endereco_cidade'] ?? ''); ?>">
+                        </div>
+                        <div class="col-4">
+                            <input type="text" name="endereco_estado" class="form-control" placeholder="UF" value="<?php echo htmlspecialchars($usuario['endereco_estado'] ?? ''); ?>">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="text-muted small text-uppercase mb-3 text-danger">Alterar Senha</h6>
+                    <div class="alert alert-light border text-muted small">
+                        <i class="bi bi-info-circle"></i> Preencha abaixo <strong>apenas</strong> se desejar trocar sua senha.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Senha Atual (Obrigatório para alterar)</label>
+                            <input type="password" name="senha_atual" class="form-control" placeholder="Digite sua senha atual">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Nova Senha</label>
+                            <input type="password" name="nova_senha" class="form-control" placeholder="Crie uma nova senha">
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button class="btn btn-primary btn-lg">Salvar Alterações</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<!-- =============================================== -->
-<!-- FIM DO CONTEÚDO DA PÁGINA -->
-<!-- =============================================== -->
-
-<?php
-// 6. INCLUI O NOVO RODAPÉ BOOTSTRAP
-require_once 'includes/footer_public.php';
-?>
+<?php require_once 'includes/footer_public.php'; ?>

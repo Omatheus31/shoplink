@@ -4,6 +4,23 @@
     object-fit: cover; /* Garante que a imagem preencha o espaço sem distorcer */
 }
 
+/* Catalog layout improvements */
+.filter-card { border-radius: 12px; }
+.product-image-wrap { height: 220px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; border-bottom:1px solid #f0f0f0; border-top-left-radius:12px; border-top-right-radius:12px; }
+.product-card { border-radius:12px; overflow:hidden; }
+.product-card .card-body { padding:16px; }
+.product-card .card-title { font-size:1rem; margin-bottom:6px; }
+.product-card .price { font-size:1.05rem; }
+
+/* Filters styling */
+.list-group-item.active { background-color:#222; border-color:#222; color:#fff; }
+.filter-card .form-control { border-radius: 8px; }
+
+/* Responsive: reduce image height on small screens */
+@media (max-width:576px) {
+    .product-image-wrap { height:160px; }
+}
+
 /* 2. Estilos dos Status (para admin/pedidos.php e minha_conta.php) */
 .status-pendente { background-color: #f39c12; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; display: inline-block; }
 .status-concluido { background-color: #27ae60; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.9em; display: inline-block; }

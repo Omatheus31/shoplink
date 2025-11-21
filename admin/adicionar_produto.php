@@ -1,13 +1,12 @@
 <?php
-// 1. INCLUI O HEADER DO ADMIN (que já conecta ao $pdo e protege a página)
+// admin/adicionar_produto.php
 $titulo_pagina = "Adicionar Produto"; 
 require_once 'includes/header_admin.php';
 
-// Busca as categorias do usuário logado para o dropdown
+// Busca TODAS as categorias (sem filtro de usuário)
 try {
-    $query_categorias = "SELECT * FROM categorias WHERE id_usuario = :id_usuario ORDER BY nome ASC";
-    $stmt_categorias = $pdo->prepare($query_categorias);
-    $stmt_categorias->execute([':id_usuario' => $id_usuario_logado]);
+    $query_categorias = "SELECT * FROM categorias ORDER BY nome ASC";
+    $stmt_categorias = $pdo->query($query_categorias);
     $categorias = $stmt_categorias->fetchAll();
 } catch (PDOException $e) {
     $erro_categorias = "Não foi possível carregar as categorias.";
@@ -26,7 +25,6 @@ try {
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
 
-                <!-- Alerta de sucesso -->
                 <?php if (isset($_GET['status']) && $_GET['status'] === 'sucesso'): ?>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <i class="bi bi-check-circle-fill"></i> Produto salvo com sucesso!
@@ -62,9 +60,6 @@ try {
                             <?php endif; ?>
                         </select>
                         <label for="categoria">Categoria</label>
-                        <?php if (isset($erro_categorias)): ?>
-                            <small class="text-danger"><?php echo $erro_categorias; ?></small>
-                        <?php endif; ?>
                     </div>
 
                     <div class="form-floating mb-3">

@@ -1,4 +1,5 @@
 <?php
+// cadastro.php
 session_start();
 if (isset($_SESSION['id_usuario'])) {
     header("Location: index.php");
@@ -11,7 +12,7 @@ if (isset($_SESSION['id_usuario'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crie sua Conta - Shoplink</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body { background-color: #f8f9fa; }
@@ -19,12 +20,13 @@ if (isset($_SESSION['id_usuario'])) {
 </head>
 <body>
     
-    <div class="container my-5"> <div class="row justify-content-center">
+    <div class="container my-5"> 
+        <div class="row justify-content-center">
             <div class="col-lg-7 col-md-10">
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4 p-md-5">
                         <div class="text-center mb-4">
-                            <h1 class="h3 fw-bold"><i class="bi bi-shop text-primary"></i> Crie sua Conta de Cliente</h1>
+                            <h1 class="h3 fw-bold"><i class="bi bi-shop text-primary"></i> Crie sua Conta</h1>
                             <p class="text-muted">Preencha seus dados para comprar.</p>
                         </div>
 
@@ -38,7 +40,7 @@ if (isset($_SESSION['id_usuario'])) {
                             } elseif ($_GET['erro'] === 'senha_curta') {
                                 $erro = 'Sua senha deve ter no mínimo 6 caracteres.';
                             } else {
-                                $erro = 'Ocorreu um erro. Tente novamente.';
+                                $erro = 'Ocorreu um erro no sistema. Tente novamente.';
                             }
                             echo '<div class="alert alert-danger">' . $erro . '</div>';
                         }
@@ -49,8 +51,8 @@ if (isset($_SESSION['id_usuario'])) {
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control" id="nome_loja" name="nome_loja" placeholder="Nome Completo" required>
-                                        <label for="nome_loja">Nome Completo</label>
+                                        <input type="text" class="form-control" id="nome" name="nome" placeholder="Nome Completo" required>
+                                        <label for="nome">Nome Completo</label>
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -150,7 +152,7 @@ if (isset($_SESSION['id_usuario'])) {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function buscarCep() {
             const cepInput = document.getElementById('cep');

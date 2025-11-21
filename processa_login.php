@@ -13,7 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // A query SELECT * já busca a coluna 'role' que criamos
         $sql = "SELECT * FROM usuarios WHERE email = :email";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':email' => $email]);
@@ -24,35 +23,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // SENHA CORRETA!
             session_regenerate_id(true);
             $_SESSION['id_usuario'] = $usuario['id'];
-            $_SESSION['nome_loja'] = $usuario['nome_loja'];
             
-            // --- MUDANÇA CRÍTICA AQUI ---
-            // Agora salvamos o "cargo" do utilizador na sessão
+            // ATENÇÃO: Mudamos de 'nome_loja' para 'nome' conforme o novo banco
+            $_SESSION['nome'] = $usuario['nome']; 
+            
+            // Salva o cargo (role). Agora só existem 'admin' ou 'cliente'
             $_SESSION['role'] = $usuario['role'];
-            // --- FIM DA MUDANÇA ---
 
             
-            // Lógica de redirecionamento (que já fizemos)
+            // 1. Verifica se existe URL de redirecionamento forçado (ex: veio do carrinho)
             if (isset($_POST['redirect_url']) && !empty($_POST['redirect_url'])) {
                 $redirect_url = filter_var($_POST['redirect_url'], FILTER_SANITIZE_URL);
+                // Segurança básica para evitar redirecionamento externo malicioso
                 if (strpos($redirect_url, 'login.php') === false && strpos($redirect_url, 'http') !== 0) {
                     header("Location: " . $redirect_url);
                     exit();
                 }
             }
             
-            // --- NOVA LÓGICA DE REDIRECIONAMENTO PADRÃO ---
-            // Se não houver redirect_url, enviamos cada um para seu "home"
-            if ($usuario['role'] === 'admin_master' || $usuario['role'] === 'admin_loja') {
-                header("Location: admin/index.php"); // Admins vão para o Dashboard
+            // 2. Redirecionamento Padrão (Baseado no cargo simples)
+            if ($usuario['role'] === 'admin') {
+                header("Location: admin/index.php"); // Admin vai para o Painel
             } else {
-                header("Location: index.php"); // Clientes vão para o Catálogo
+                header("Location: index.php"); // Cliente vai para a Loja
             }
             exit();
-            // --- FIM DA NOVA LÓGICA ---
 
         } else {
-            // SENHA ERRADA (lógica não muda)
+            // SENHA ERRADA
             $redirect_query = '';
             if (isset($_POST['redirect_url']) && !empty($_POST['redirect_url'])) {
                 $redirect_query = '&redirect_url=' . urlencode($_POST['redirect_url']);

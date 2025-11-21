@@ -24,13 +24,26 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item">
+                        <a class="nav-link" href="index.php">
+                            <i class="bi bi-journal-bookmark-fill"></i> Catálogo
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="carrinho.php">
                             <i class="bi bi-cart-fill"></i> Carrinho (<span id="cart-counter">0</span>)
                         </a>
                     </li>
                     <?php if (isset($_SESSION['id_usuario'])): ?>
+                        <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'admin_master' || $_SESSION['role'] === 'admin_loja')): ?>
+                            <li class="nav-item">
+                                <a class="nav-link text-warning" href="admin/index.php"><i class="bi bi-shield-lock-fill"></i> Painel Admin</a>
+                            </li>
+                        <?php endif; ?>
                         <li class="nav-item">
                             <a class="nav-link" href="minha_conta.php"><i class="bi bi-person-fill"></i> Minha Conta</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="meus_pedidos.php"><i class="bi bi-receipt"></i> Meus Pedidos</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link btn-sair" href="logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a>

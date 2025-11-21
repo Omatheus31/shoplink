@@ -87,6 +87,67 @@ Siga os passos abaixo para executar o projeto em um ambiente local.
 * **Catálogo Público (Loja Principal):** Acesse `http://localhost/shoplink/`
 * **Painel Administrativo:** Acesse `http://localhost/shoplink/login.php` para entrar ou `http://localhost/shoplink/cadastro.php` para criar uma nova conta de lojista.
 
+### ⚙️ Configurações adicionais (Roles e usuário admin)
+
+O projeto usa uma coluna `role` na tabela `usuarios` para distinguir administradores de clientes. Se o seu banco veio do arquivo `database.sql` deste repositório, é provável que ainda não exista a coluna `role`. Para garantir compatibilidade, execute (no phpMyAdmin ou via cliente SQL):
+
+```sql
+ALTER TABLE usuarios
+    ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'cliente';
+```
+
+Depois disso, você pode criar um usuário admin (Admin da loja) de duas formas:
+
+- Método A — Gerar o hash da senha com PHP e inserir manualmente (recomendado):
+
+    1. No terminal (PowerShell) gere o hash da senha (substitua `SuaSenhaAqui` pela senha desejada):
+
+         ```powershell
+         php -r "echo password_hash('SuaSenhaAqui', PASSWORD_DEFAULT);"
+         ```
+
+         Copie o valor retornado (algo como `$2y$10$...`).
+
+    2. No phpMyAdmin (ou cliente SQL) rode um INSERT usando o hash gerado:
+
+         ```sql
+         INSERT INTO usuarios (nome_loja, email, senha_hash, role)
+         VALUES ('Nome Admin', 'admin@exemplo.com', '<HASH_AQUI>', 'admin_master');
+         ```
+
+- Método B — Transformar um usuário existente em admin:
+
+    ```sql
+    UPDATE usuarios SET role = 'admin_master' WHERE email = 'admin@exemplo.com';
+    ```
+
+Observação: o projeto trata dois tipos de administrador: `admin_master` (super admin) e `admin_loja` (administrador da loja). Clientes normais devem ter `role = 'cliente'`.
+
+### Criar usuário admin via script PHP (alternativa)
+
+Se preferir, você pode criar o usuário com um pequeno script PHP (`criar_admin.php`) colocado temporariamente na raiz do projeto. Exemplo de conteúdo:
+
+```php
+<?php
+require 'config/database.php';
+$nome = 'Nome Admin';
+$email = 'admin@exemplo.com';
+$senha = 'SuaSenhaAqui';
+$hash = password_hash($senha, PASSWORD_DEFAULT);
+$stmt = $pdo->prepare('INSERT INTO usuarios (nome_loja, email, senha_hash, role) VALUES (:n,:e,:s,:r)');
+$stmt->execute([':n'=>$nome,':e'=>$email,':s'=>$hash,':r'=>'admin_master']);
+echo "Admin criado\n";
+```
+
+Salve o arquivo e execute no terminal (no diretório do projeto):
+
+```powershell
+php criar_admin.php
+```
+
+Remova o script `criar_admin.php` depois de criar o usuário por segurança.
+
+
 ---
 
 ## 🗺️ Próximos Passos (Roadmap)

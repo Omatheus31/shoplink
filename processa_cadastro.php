@@ -1,76 +1,57 @@
 <?php
-// 1. INICIA A SESSÃO E CONECTA AO BANCO
+// processa_cadastro.php
 session_start();
 require_once 'config/database.php';
 
-// 2. VERIFICA SE A REQUISIÇÃO É DO TIPO POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // 3. COLETA DOS DADOS BÁSICOS
-    $nome_loja = trim($_POST['nome_loja']); // Nome do Cliente
+    // 1. Recebe e limpa os dados
+    $nome = trim($_POST['nome']); // CORRIGIDO: era nome_loja
     $email = trim($_POST['email']);
     $telefone = trim($_POST['telefone']);
-    $senha = trim($_POST['senha']);
-    $confirma_senha = trim($_POST['confirma_senha']);
+    
+    // Endereço
+    $cep = trim($_POST['endereco_cep'] ?? '');
+    $rua = trim($_POST['endereco_rua'] ?? '');
+    $numero = trim($_POST['endereco_numero'] ?? '');
+    $bairro = trim($_POST['endereco_bairro'] ?? '');
+    $cidade = trim($_POST['endereco_cidade'] ?? '');
+    $estado = trim($_POST['endereco_estado'] ?? '');
+    $complemento = trim($_POST['endereco_complemento'] ?? '');
 
-    // 4. COLETA DOS DADOS DE ENDEREÇO
-    $cep = trim($_POST['endereco_cep']);
-    $rua = trim($_POST['endereco_rua']);
-    $numero = trim($_POST['endereco_numero']);
-    $bairro = trim($_POST['endereco_bairro']);
-    $cidade = trim($_POST['endereco_cidade']);
-    $estado = trim($_POST['endereco_estado']);
-    $complemento = trim($_POST['endereco_complemento']);
+    $senha = $_POST['senha'];
+    $confirma_senha = $_POST['confirma_senha'];
 
-    // --- 5. VALIDAÇÃO DOS DADOS ---
+    // 2. Validações básicas
     if ($senha !== $confirma_senha) {
         header("Location: cadastro.php?erro=senhas_nao_conferem");
         exit();
     }
-    if (empty($nome_loja) || empty($email) || empty($telefone) || empty($senha)) {
-        header("Location: cadastro.php?erro=campos_vazios");
-        exit();
-    }
+
     if (strlen($senha) < 6) {
         header("Location: cadastro.php?erro=senha_curta");
         exit();
     }
 
-    // --- 6. VERIFICAR SE O E-MAIL JÁ EXISTE ---
     try {
-        $sql_check = "SELECT id FROM usuarios WHERE email = :email";
-        $stmt_check = $pdo->prepare($sql_check);
-        $stmt_check->execute([':email' => $email]);
-        
-        if ($stmt_check->fetch()) {
+        // 3. Verifica se email já existe
+        $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = :email");
+        $stmt->execute([':email' => $email]);
+        if ($stmt->rowCount() > 0) {
             header("Location: cadastro.php?erro=email_existe");
             exit();
         }
 
-        // --- 7. TUDO CERTO! CRIAR O HASH DA SENHA ---
-        $senha_hash = password_hash($senha, PASSWORD_BCRYPT);
-        if ($senha_hash === false) {
-            die("Erro crítico ao gerar o hash da senha.");
-        }
+        // 4. Hash da senha
+        $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
 
-        // --- 8. INSERIR O NOVO USUÁRIO (AGORA COM ENDEREÇO) ---
-        // A coluna 'role' usará o valor DEFAULT 'cliente' que definimos no banco
-        $sql_insert = "INSERT INTO usuarios (
-                            nome_loja, email, telefone, 
-                            endereco_cep, endereco_rua, endereco_numero, 
-                            endereco_bairro, endereco_cidade, endereco_estado, endereco_complemento, 
-                            senha_hash
-                       ) VALUES (
-                            :nome_loja, :email, :telefone, 
-                            :cep, :rua, :numero, 
-                            :bairro, :cidade, :estado, :complemento, 
-                            :senha_hash
-                       )";
+        // 5. Insere no banco (COM A NOVA ESTRUTURA DE COLUNAS)
+        $sql = "INSERT INTO usuarios (nome, email, telefone, endereco_cep, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_complemento, senha_hash, role) 
+                VALUES (:nome, :email, :telefone, :cep, :rua, :numero, :bairro, :cidade, :estado, :complemento, :senha_hash, 'cliente')";
         
-        $stmt_insert = $pdo->prepare($sql_insert);
-        
-        $stmt_insert->execute([
-            ':nome_loja' => $nome_loja,
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':nome' => $nome,
             ':email' => $email,
             ':telefone' => $telefone,
             ':cep' => $cep,
@@ -83,13 +64,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':senha_hash' => $senha_hash
         ]);
 
-        // --- 9. MUDANÇA: NÃO FAZ LOGIN AUTOMÁTICO ---
-        // Em vez disso, redireciona para o login com mensagem de sucesso
-        header("Location: login.php?status=cadastro_sucesso"); 
+        // 6. Sucesso - Redireciona para login
+        header("Location: login.php?cadastro=sucesso");
         exit();
 
     } catch (PDOException $e) {
-        die("Erro no cadastro: " . $e->getMessage());
+        // Em produção, logar o erro e não exibir na tela
+        die("Erro no banco de dados: " . $e->getMessage());
     }
 
 } else {

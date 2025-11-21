@@ -1,29 +1,23 @@
 <?php
-// 1. O PHP NO TOPO É QUASE O MESMO
+// produto_detalhe.php
 require_once 'config/database.php';
 
-// --- ASSUMINDO QUE O SEU ADMIN MASTER (Marcenaria) É ID = 2 ---
-// Se for outro ID, mude o '2' abaixo
-$id_loja_principal = 2;
-// ----------------------------------------------------
-
-// 2. BUSCA DO PRODUTO
+// 1. VALIDAÇÃO DO ID
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: index.php");
     exit();
 }
+
 $id_produto = (int)$_GET['id'];
+
 try {
-    // Busca o produto, garantindo que ele pertença à loja principal
-    $sql = "SELECT * FROM produtos WHERE id = :id_produto AND id_usuario = :id_loja";
+    // 2. BUSCA O PRODUTO (Sem filtro de dono/loja)
+    $sql = "SELECT * FROM produtos WHERE id = :id_produto";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        ':id_produto' => $id_produto,
-        ':id_loja' => $id_loja_principal
-    ]);
+    $stmt->execute([':id_produto' => $id_produto]);
     $produto = $stmt->fetch();
     
-    // Se o produto não for encontrado (ou não pertencer à loja principal)
+    // Se o produto não existir
     if (!$produto) {
         header("Location: index.php");
         exit();
@@ -32,61 +26,66 @@ try {
     die("Erro ao buscar o produto: " . $e->getMessage());
 }
 
-// 3. INCLUI O NOVO CABEÇALHO BOOTSTRAP
-// A sessão já é iniciada dentro deste arquivo
-$titulo_pagina = htmlspecialchars($produto['nome']); // Define o título da aba
+// 3. INCLUI O HEADER
+$titulo_pagina = htmlspecialchars($produto['nome']);
 require_once 'includes/header_public.php';
 ?>
 
-<!-- =============================================== -->
-<!-- INÍCIO DO CONTEÚDO DA PÁGINA (Refatorado) -->
-<!-- =============================================== -->
+<!-- Link de Voltar -->
+<div class="container py-3">
+    <a href="index.php" class="text-decoration-none text-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Catálogo
+    </a>
+</div>
 
-<!-- Link para voltar (com classes Bootstrap) -->
-<a href="index.php" class="text-decoration-none mb-3 d-inline-block">
-    <i class="bi bi-arrow-left"></i> Voltar ao Catálogo
-</a>
-
-<!-- Layout de Grid do Bootstrap (row/col) -->
-<div class="row g-4">
+<div class="row g-5 mt-2">
     <!-- Coluna da Imagem -->
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm">
-            <!-- Imagem responsiva do Bootstrap -->
-            <img src="uploads/<?php echo htmlspecialchars($produto['imagem_url']); ?>" class="img-fluid rounded" alt="<?php echo htmlspecialchars($produto['nome']); ?>" style="max-height: 500px; object-fit: cover;">
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm bg-white rounded-3 overflow-hidden">
+            <div class="product-image-detail d-flex align-items-center justify-content-center bg-light" style="min-height: 400px;">
+                <img src="uploads/<?php echo htmlspecialchars($produto['imagem_url']); ?>" 
+                     class="img-fluid" 
+                     alt="<?php echo htmlspecialchars($produto['nome']); ?>" 
+                     style="max-height: 500px; object-fit: contain;">
+            </div>
         </div>
     </div>
 
     <!-- Coluna das Informações -->
-    <div class="col-lg-6">
-        <div class="d-flex flex-column h-100">
-            <!-- Nome do Produto -->
-            <h1 class="h2 fw-bold"><?php echo htmlspecialchars($produto['nome']); ?></h1>
+    <div class="col-md-6">
+        <div class="h-100 d-flex flex-column justify-content-center">
             
-            <!-- Preço -->
-            <p class="text-success fs-2 fw-bold my-3">
+            <h1 class="display-5 fw-bold text-dark mb-2"><?php echo htmlspecialchars($produto['nome']); ?></h1>
+            
+            <div class="mb-4">
+                <span class="badge bg-success px-3 py-2 rounded-pill">Disponível</span>
+                <!-- Se tivesse categoria, poderia mostrar aqui -->
+            </div>
+
+            <p class="display-6 text-success fw-bold mb-4">
                 R$ <?php echo number_format($produto['preco'], 2, ',', '.'); ?>
             </p>
             
-            <!-- Descrição -->
-            <h5 class="mt-3">Descrição</h5>
-            <p class="text-muted fs-5" style="line-height: 1.6;">
-                <?php echo nl2br(htmlspecialchars($produto['descricao'])); // nl2br para quebrar linhas ?>
-            </p>
+            <div class="mb-5">
+                <h5 class="text-muted mb-3">Sobre o produto:</h5>
+                <p class="lead fs-6 text-secondary" style="line-height: 1.8;">
+                    <?php echo nl2br(htmlspecialchars($produto['descricao'])); ?>
+                </p>
+            </div>
             
-            <!-- Botão de Ação (com lógica de login) -->
-            <div class="mt-auto"> <!-- Empurra o botão para baixo -->
+            <!-- Botão de Ação -->
+            <div class="d-grid gap-2">
                 <?php if (isset($_SESSION['id_usuario'])): ?>
-                    <button class="btn btn-primary btn-lg w-100 add-to-cart-btn" 
+                    <button class="btn btn-primary btn-lg py-3 add-to-cart-btn" 
                             data-id="<?php echo $produto['id']; ?>" 
                             data-nome="<?php echo htmlspecialchars($produto['nome']); ?>" 
                             data-preco="<?php echo $produto['preco']; ?>"
                             data-imagem="<?php echo htmlspecialchars($produto['imagem_url']); ?>">
-                        <i class="bi bi-cart-plus-fill"></i> Adicionar ao Carrinho
+                        <i class="bi bi-cart-plus-fill me-2"></i> Adicionar ao Carrinho
                     </button>
                 <?php else: ?>
-                    <a href="login.php" class="btn btn-secondary btn-lg w-100">
-                        Faça login para comprar
+                    <a href="login.php?redirect_url=<?php echo urlencode($_SERVER['REQUEST_URI']); ?>" class="btn btn-dark btn-lg py-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Faça login para comprar
                     </a>
                 <?php endif; ?>
             </div>
@@ -95,12 +94,4 @@ require_once 'includes/header_public.php';
     </div>
 </div>
 
-<!-- =============================================== -->
-<!-- FIM DO CONTEÚDO DA PÁGINA -->
-<!-- =============================================== -->
-
-<?php
-// 4. INCLUI O NOVO RODAPÉ BOOTSTRAP
-// Ele já inclui o <div id="toast-notification">
-require_once 'includes/footer_public.php';
-?>
+<?php require_once 'includes/footer_public.php'; ?>

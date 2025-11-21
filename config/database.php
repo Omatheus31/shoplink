@@ -3,7 +3,7 @@
 
 // Definições do banco de dados
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'shoplink_db');
+define('DB_NAME', 'shoplink_final');
 define('DB_USER', 'root'); // Ou seu usuário do MySQL
 define('DB_PASS', '');     // Ou sua senha do MySQL
 

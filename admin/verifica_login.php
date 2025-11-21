@@ -1,24 +1,24 @@
 <?php
-// 1. INICIA A SESSÃO
+// admin/verifica_login.php
 session_start();
 
-// 2. VERIFICA SE ESTÁ LOGADO
+// 1. VERIFICA SE ESTÁ LOGADO
 if (!isset($_SESSION['id_usuario'])) {
-    // Não está logado
     $redirect_url = urlencode($_SERVER['REQUEST_URI']);
     header("Location: ../login.php?erro=acesso_negado&redirect_url=" . $redirect_url);
     exit();
 }
 
-// 3. VERIFICA SE TEM O CARGO CORRETO
-if ($_SESSION['role'] !== 'admin_master' && $_SESSION['role'] !== 'admin_loja') {
-    // Está logado, mas é um 'cliente'
-    // Chuta ele para fora do admin, enviando para o catálogo
+// 2. VERIFICA O NÍVEL DE ACESSO (ROLE)
+// No banco novo, o papel é apenas 'admin'
+if ($_SESSION['role'] !== 'admin') {
+    // Se for cliente tentando entrar no admin, manda pra home
     header("Location: ../index.php"); 
     exit();
 }
 
-// Se o script chegou até aqui, o utilizador está LOGADO e é um ADMIN.
+// Se chegou aqui, é ADMIN liberado.
 $id_usuario_logado = $_SESSION['id_usuario'];
-$nome_loja_logado = $_SESSION['nome_loja'];
+// $nome_loja não é mais necessário na sessão para lógica, mas se quiser exibir no topo:
+$nome_usuario_logado = $_SESSION['nome'] ?? 'Administrador';
 ?>
