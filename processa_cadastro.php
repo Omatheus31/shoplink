@@ -64,8 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':senha_hash' => $senha_hash
         ]);
 
-        // 6. Sucesso - Redireciona para login
-        header("Location: login.php?cadastro=sucesso");
+        // 6. Login Automático (Melhor UX)
+        $id_novo = $pdo->lastInsertId();
+        $_SESSION['id_usuario'] = $id_novo;
+        $_SESSION['nome'] = $nome;
+        $_SESSION['role'] = 'cliente';
+
+        // Redireciona para a Home com aviso de "Email Enviado"
+        header("Location: index.php?msg=bem_vindo");
         exit();
 
     } catch (PDOException $e) {

@@ -92,11 +92,11 @@ if (isset($_SESSION['id_usuario'])) {
                             <label for="senha">Senha</label>
                         </div>
                         
-                        <div class="text-end mb-3">
-                            <a href="esqueci_senha.php" class="small text-decoration-none">Esqueceu sua senha?</a>
-                        </div>
-                        
                         <button type="submit" class="w-100 btn btn-lg btn-primary">Entrar</button>
+
+                        <div class="text-end mb-3">
+                            <a href="recuperar_senha.php" class="text-decoration-none small text-muted">Esqueci minha senha</a>
+                        </div>
                     </form>
 
                     <div class="text-center mt-4">

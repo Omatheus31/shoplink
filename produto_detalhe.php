@@ -94,4 +94,6 @@ require_once 'includes/header_public.php';
     </div>
 </div>
 
+<div id="toast-notification">Produto adicionado ao carrinho!</div>
+
 <?php require_once 'includes/footer_public.php'; ?>

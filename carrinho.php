@@ -101,8 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartTotalElement = document.getElementById('cart-total');
     const checkoutForm = document.getElementById('checkout-form');
     const concluirBtn = document.getElementById('concluir-pedido-btn');
-    const cart = JSON.parse(localStorage.getItem('shoplinkCart')) || [];
+    // Pega o carrinho ou array vazio
+    let cart = JSON.parse(localStorage.getItem('shoplinkCart')) || [];
 
+    // Função para Salvar
+    function saveCart() {
+        localStorage.setItem('shoplinkCart', JSON.stringify(cart));
+        displayCart();
+        updateCartCounter(); // Atualiza a bolinha no header se existir
+    }
+
+    // Função para Renderizar
     function displayCart() {
         cartItemsContainer.innerHTML = '';
         let total = 0;
@@ -119,19 +128,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const listGroup = document.createElement('ul');
         listGroup.className = 'list-group list-group-flush';
 
-        cart.forEach(item => {
+        cart.forEach((item, index) => {
             const itemTotal = item.preco * item.quantity;
             total += itemTotal;
+            
             const li = document.createElement('li');
-            li.className = 'list-group-item d-flex align-items-center px-0 py-3 border-bottom';
+            li.className = 'list-group-item d-flex align-items-center px-0 py-3 border-bottom flex-wrap';
+            
             li.innerHTML = `
-                <img src="uploads/${item.imagem}" alt="${item.nome}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" class="me-3 border">
-                <div class="flex-grow-1">
-                    <h6 class="mb-0">${item.nome}</h6>
-                    <small class="text-muted">Qtd: ${item.quantity} x R$ ${item.preco.toFixed(2).replace('.', ',')}</small>
+                <div class="d-flex align-items-center flex-grow-1">
+                    <img src="uploads/${item.imagem}" alt="${item.nome}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" class="me-3 border">
+                    <div>
+                        <h6 class="mb-1 text-truncate" style="max-width: 180px;">${item.nome}</h6>
+                        <small class="text-muted">Unit: R$ ${item.preco.toFixed(2).replace('.', ',')}</small>
+                    </div>
                 </div>
-                <strong class="ms-3 text-dark">R$ ${itemTotal.toFixed(2).replace('.', ',')}</strong>
-                <button class="btn btn-link text-danger ms-2 remove-item-btn" data-id="${item.id}"><i class="bi bi-trash"></i></button>
+                
+                <div class="d-flex align-items-center mt-2 mt-sm-0">
+                    <div class="input-group input-group-sm me-3" style="width: 100px;">
+                        <button class="btn btn-outline-secondary btn-decrease" data-index="${index}" type="button"><i class="bi bi-dash"></i></button>
+                        <input type="text" class="form-control text-center bg-white" value="${item.quantity}" readonly>
+                        <button class="btn btn-outline-secondary btn-increase" data-index="${index}" type="button"><i class="bi bi-plus"></i></button>
+                    </div>
+
+                    <strong class="text-dark me-3" style="min-width: 80px; text-align: right;">R$ ${itemTotal.toFixed(2).replace('.', ',')}</strong>
+                    
+                    <button class="btn btn-sm text-danger remove-item-btn" data-index="${index}" title="Remover">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </div>
             `;
             listGroup.appendChild(li);
         });
@@ -139,40 +164,71 @@ document.addEventListener('DOMContentLoaded', () => {
         cartItemsContainer.appendChild(listGroup);
         cartTotalElement.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
         
-        // Adiciona eventos de remover
+        addEvents();
+    }
+
+    // Adiciona eventos aos botões criados dinamicamente
+    function addEvents() {
+        // Botão Aumentar (+)
+        document.querySelectorAll('.btn-increase').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = e.currentTarget.dataset.index;
+                cart[index].quantity++;
+                saveCart();
+            });
+        });
+
+        // Botão Diminuir (-)
+        document.querySelectorAll('.btn-decrease').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = e.currentTarget.dataset.index;
+                if (cart[index].quantity > 1) {
+                    cart[index].quantity--;
+                    saveCart();
+                } else {
+                    // Se for 1 e clicar em menos, pergunta se quer remover
+                    if(confirm("Remover este item do carrinho?")) {
+                        cart.splice(index, 1);
+                        saveCart();
+                    }
+                }
+            });
+        });
+
+        // Botão Lixeira
         document.querySelectorAll('.remove-item-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const id = e.currentTarget.dataset.id;
-                const idx = cart.findIndex(i => i.id === id);
-                if (idx > -1) { cart.splice(idx, 1); localStorage.setItem('shoplinkCart', JSON.stringify(cart)); displayCart(); }
+                const index = e.currentTarget.dataset.index;
+                if(confirm("Tem certeza?")) {
+                    cart.splice(index, 1);
+                    saveCart();
+                }
             });
         });
     }
 
-    // --- LÓGICA DE ENVIO DO PEDIDO ATUALIZADA ---
-    concluirBtn.addEventListener('click', async () => {
-        // 1. Captura o pagamento selecionado
-        const metodoPagamentoEl = document.querySelector('input[name="metodo_pagamento"]:checked');
-        if (!metodoPagamentoEl) {
-            alert("Por favor, selecione uma forma de pagamento.");
-            return;
+    // Função auxiliar para o contador do header (se houver)
+    function updateCartCounter() {
+        const counter = document.getElementById('cart-counter');
+        if(counter) {
+            const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+            counter.innerText = totalQty;
         }
-        const metodoPagamento = metodoPagamentoEl.value;
+    }
 
+    // Lógica de Envio (Checkout) - Mantida a original
+    concluirBtn.addEventListener('click', async () => {
+        const metodoPagamentoEl = document.querySelector('input[name="metodo_pagamento"]:checked');
+        if (!metodoPagamentoEl) { alert("Selecione uma forma de pagamento."); return; }
+        
         concluirBtn.disabled = true;
         concluirBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processando...';
         
-        // 2. Monta o pacote de dados com o pagamento
-        const pedidoData = { 
-            carrinho: cart,
-            metodo_pagamento: metodoPagamento
-        };
-
         try {
             const response = await fetch('salvar_pedido_logado.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(pedidoData)
+                body: JSON.stringify({ carrinho: cart, metodo_pagamento: metodoPagamentoEl.value })
             });
             const result = await response.json();
 

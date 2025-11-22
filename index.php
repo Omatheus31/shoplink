@@ -1,9 +1,8 @@
 <?php
-// index.php
 require_once 'config/database.php';
 
 try {
-    // 1. BUSCAR TODAS AS CATEGORIAS (Sem filtro de usuário)
+    // 1. BUSCAR TODAS AS CATEGORIAS
     $query_categorias = "SELECT * FROM categorias ORDER BY nome ASC";
     $stmt_categorias = $pdo->query($query_categorias);
     $categorias = $stmt_categorias->fetchAll();
@@ -13,7 +12,6 @@ try {
     $q = null;
     
     if (isset($_GET['categoria']) && !empty($_GET['categoria'])) {
-        // Verifica se é número (ID) ou string 'nenhuma'
         if (is_numeric($_GET['categoria'])) {
             $id_categoria_filtro = (int)$_GET['categoria'];
         }
@@ -23,8 +21,7 @@ try {
         $q = trim($_GET['q']);
     }
 
-    // 3. QUERY DE PRODUTOS (Refatorada para Loja Única)
-    // Começamos com 1=1 para facilitar a concatenação dos ANDs
+    // 3. QUERY DE PRODUTOS
     $query_produtos = "SELECT * FROM produtos WHERE 1=1";
     $params = [];
 
@@ -33,15 +30,17 @@ try {
         $query_produtos .= " AND id_categoria = :id_categoria";
         $params[':id_categoria'] = $id_categoria_filtro;
     } elseif (isset($_GET['categoria']) && $_GET['categoria'] === 'nenhuma') {
-        // Produtos sem categoria definida
         $query_produtos .= " AND id_categoria IS NULL";
     }
 
-    // Filtro de Busca (Nome ou Descrição)
+    // --- CORREÇÃO DA BUSCA AQUI ---
     if ($q) {
-        $query_produtos .= " AND (nome LIKE :q OR descricao LIKE :q)";
-        $params[':q'] = '%' . $q . '%';
+        // Usamos :q1 e :q2 para evitar o erro de "Invalid parameter number"
+        $query_produtos .= " AND (nome LIKE :q1 OR descricao LIKE :q2)";
+        $params[':q1'] = '%' . $q . '%';
+        $params[':q2'] = '%' . $q . '%';
     }
+    // ------------------------------
     
     $query_produtos .= " ORDER BY id DESC";
     
@@ -54,12 +53,10 @@ try {
 }
 
 // 4. INCLUI O CABEÇALHO
-// A sessão é iniciada dentro do header_public.php
 require_once 'includes/header_public.php';
 ?>
 
 <div class="row">
-    <!-- Barra Lateral de Filtros -->
     <div class="col-lg-3 mb-4">
         <div class="card shadow-sm filter-card">
             <div class="card-body">
@@ -89,7 +86,6 @@ require_once 'includes/header_public.php';
         </div>
     </div>
 
-    <!-- Lista de Produtos -->
     <div class="col-lg-9">
         <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3">
             <?php if ($produtos): ?>
@@ -115,7 +111,6 @@ require_once 'includes/header_public.php';
                                         <div class="fw-bold text-success fs-5">R$ <?php echo number_format($produto['preco'], 2, ',', '.'); ?></div>
                                     </div>
                                     
-                                    <!-- Botão de Compra -->
                                     <?php if (isset($_SESSION['id_usuario'])): ?>
                                         <button class="btn btn-success btn-sm add-to-cart-btn" 
                                                 data-id="<?php echo $produto['id']; ?>" 
@@ -146,7 +141,6 @@ require_once 'includes/header_public.php';
     </div>
 </div>
 
-<!-- Notificação Toast (Usada pelo JS do carrinho) -->
 <div id="toast-notification">Produto adicionado ao carrinho!</div>
 
 <?php require_once 'includes/footer_public.php'; ?>

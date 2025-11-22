@@ -131,6 +131,12 @@ if (isset($_SESSION['id_usuario'])) {
                                         <label for="senha">Crie uma Senha</label>
                                     </div>
                                 </div>
+                                <div class="card p-2 mb-3 bg-light border-0 small" id="password-rules" style="display:none;">
+                                    <p class="mb-1 fw-bold text-muted">Sua senha deve ter:</p>
+                                    <div id="rule-length" class="text-danger"><i class="bi bi-x"></i> Mínimo 8 caracteres</div>
+                                    <div id="rule-upper" class="text-danger"><i class="bi bi-x"></i> Letra Maiúscula</div>
+                                    <div id="rule-lower" class="text-danger"><i class="bi bi-x"></i> Letra Minúscula</div>
+                                </div>
                                 <div class="col-md-6 mb-3">
                                     <div class="form-floating">
                                         <input type="password" class="form-control" id="confirma_senha" name="confirma_senha" placeholder="Confirme a Senha" required>
@@ -184,6 +190,35 @@ if (isset($_SESSION['id_usuario'])) {
             document.getElementById('bairro').readOnly = isReadOnly;
             document.getElementById('cidade').readOnly = isReadOnly;
             document.getElementById('estado').readOnly = isReadOnly;
+        }
+        
+        const passwordInput = document.getElementById('senha');
+        const rulesBox = document.getElementById('password-rules');
+        
+        passwordInput.addEventListener('focus', () => rulesBox.style.display = 'block');
+        
+        passwordInput.addEventListener('input', function() {
+            const val = this.value;
+            
+            // Regras
+            const hasLength = val.length >= 8;
+            const hasUpper = /[A-Z]/.test(val);
+            const hasLower = /[a-z]/.test(val);
+            
+            updateRule('rule-length', hasLength);
+            updateRule('rule-upper', hasUpper);
+            updateRule('rule-lower', hasLower);
+        });
+
+        function updateRule(id, isValid) {
+            const el = document.getElementById(id);
+            if (isValid) {
+                el.className = 'text-success';
+                el.innerHTML = '<i class="bi bi-check"></i> ' + el.innerText.replace('✔', '').replace('✖', '').trim();
+            } else {
+                el.className = 'text-danger';
+                el.innerHTML = '<i class="bi bi-x"></i> ' + el.innerText.replace('✔', '').replace('✖', '').trim();
+            }
         }
     </script>
 </body>
