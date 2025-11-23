@@ -1,12 +1,11 @@
 <?php
-// recuperar_senha.php
 require_once 'config/database.php';
+require_once 'includes/email.php'; // <--- Inclui nosso carteiro
 $titulo_pagina = "Recuperar Senha";
 require_once 'includes/header_public.php';
 
 $mensagem = "";
 $tipo_alerta = "";
-$link_simulado = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
@@ -17,15 +16,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $stmt->fetch();
 
     if ($user) {
-        // 2. Gera um token simples (base64 do email) para simulação
-        // Em produção real, seria um hash único salvo no banco com validade de tempo.
+        // 2. Gera o Token e o Link (Isso deve ser um link LOCAL ou NGROK se estiver apresentando)
+        // Dica: Para o vídeo, use localhost. Se usar ngrok, lembre de atualizar aqui.
         $token = base64_encode($email);
-        
-        $mensagem = "Um link de recuperação foi enviado para <strong>" . htmlspecialchars($email) . "</strong>.";
-        $tipo_alerta = "success";
-        
-        // O LINK MÁGICO (Simulando o e-mail)
-        $link_simulado = "redefinir_senha.php?token=" . $token;
+        $link = "http://localhost/shoplink/redefinir_senha.php?token=" . $token;
+
+        // 3. Monta o HTML do E-mail
+        $corpo_email = "
+        <h2>Recuperação de Senha</h2>
+        <p>Olá, <strong>{$user['nome']}</strong>.</p>
+        <p>Recebemos uma solicitação para redefinir sua senha no Shoplink.</p>
+        <p>Clique no link abaixo para criar uma nova senha:</p>
+        <p><a href='$link' style='background:#0d6efd; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>Redefinir Minha Senha</a></p>
+        <p>Se não foi você, ignore este e-mail.</p>
+        ";
+
+        // 4. Tenta Enviar
+        if (enviarEmail($email, $user['nome'], 'Redefinir Senha - Shoplink', $corpo_email)) {
+            $mensagem = "E-mail enviado com sucesso para <strong>$email</strong>! Verifique sua caixa de entrada.";
+            $tipo_alerta = "success";
+        } else {
+            $mensagem = "Erro ao enviar e-mail. Verifique sua conexão ou tente mais tarde.";
+            $tipo_alerta = "danger";
+        }
+
     } else {
         $mensagem = "E-mail não encontrado em nossa base de dados.";
         $tipo_alerta = "danger";
@@ -44,20 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="alert alert-<?php echo $tipo_alerta; ?> text-start">
                         <?php echo $mensagem; ?>
                     </div>
-                    
-                    <?php if ($tipo_alerta === 'success'): ?>
-                        <div class="card bg-light border-warning mb-3 text-start">
-                            <div class="card-header bg-warning text-dark small fw-bold">
-                                <i class="bi bi-bug-fill"></i> MODO DEBUG (Simulação de E-mail)
-                            </div>
-                            <div class="card-body small">
-                                <p class="mb-1">Assunto: Redefinir Senha - Shoplink</p>
-                                <p class="mb-2">Olá, <?php echo htmlspecialchars($user['nome']); ?>. Clique abaixo para trocar sua senha:</p>
-                                <a href="<?php echo $link_simulado; ?>" class="btn btn-sm btn-primary">Redefinir Minha Senha</a>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
                 <?php endif; ?>
 
                 <?php if (empty($mensagem) || $tipo_alerta === 'danger'): ?>
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="email" class="form-control" id="email" name="email" placeholder="email" required>
                             <label for="email">E-mail Cadastrado</label>
                         </div>
-                        <button class="btn btn-primary w-100 py-2">Enviar Link</button>
+                        <button class="btn btn-primary w-100 py-2" onclick="this.innerHTML='Enviando...'">Enviar Link</button>
                     </form>
                 <?php endif; ?>
                 

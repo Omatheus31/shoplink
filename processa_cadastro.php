@@ -2,12 +2,14 @@
 // processa_cadastro.php
 session_start();
 require_once 'config/database.php';
+require_once 'includes/email.php'; // Inclui o disparador de e-mail
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 1. Recebe e limpa os dados
-    $nome = trim($_POST['nome']); // CORRIGIDO: era nome_loja
+    $nome = trim($_POST['nome']);
     $email = trim($_POST['email']);
+    $confirmar_email = trim($_POST['confirmar_email']); // Novo campo
     $telefone = trim($_POST['telefone']);
     
     // Endereço
@@ -22,19 +24,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $senha = $_POST['senha'];
     $confirma_senha = $_POST['confirma_senha'];
 
-    // 2. Validações básicas
+    // 2. VALIDAÇÕES BÁSICAS
+    
+    // Valida E-mails iguais
+    if ($email !== $confirmar_email) {
+        header("Location: cadastro.php?erro=emails_nao_conferem"); // Você pode criar esse erro no cadastro.php se quiser
+        exit();
+    }
+
+    // Valida Senhas iguais
     if ($senha !== $confirma_senha) {
         header("Location: cadastro.php?erro=senhas_nao_conferem");
         exit();
     }
 
-    if (strlen($senha) < 6) {
+    // Valida tamanho da senha
+    if (strlen($senha) < 8) { // Ajustei para 8 conforme seu checklist visual
         header("Location: cadastro.php?erro=senha_curta");
         exit();
     }
 
     try {
-        // 3. Verifica se email já existe
+        // 3. Verifica se email já existe no banco
         $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = :email");
         $stmt->execute([':email' => $email]);
         if ($stmt->rowCount() > 0) {
@@ -45,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 4. Hash da senha
         $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
 
-        // 5. Insere no banco (COM A NOVA ESTRUTURA DE COLUNAS)
+        // 5. Insere no banco
         $sql = "INSERT INTO usuarios (nome, email, telefone, endereco_cep, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_complemento, senha_hash, role) 
                 VALUES (:nome, :email, :telefone, :cep, :rua, :numero, :bairro, :cidade, :estado, :complemento, :senha_hash, 'cliente')";
         
@@ -64,18 +75,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':senha_hash' => $senha_hash
         ]);
 
-        // 6. Login Automático (Melhor UX)
+        // 6. ENVIA E-MAIL DE BOAS-VINDAS (Opcional, mas chique!)
+        $corpo_email = "
+            <h2>Bem-vindo ao Shoplink!</h2>
+            <p>Olá, <strong>$nome</strong>.</p>
+            <p>Seu cadastro foi realizado com sucesso. Agora você pode aproveitar nossas ofertas exclusivas.</p>
+            <p>Seus dados de acesso:</p>
+            <ul>
+                <li><strong>E-mail:</strong> $email</li>
+                <li><strong>Senha:</strong> (Protegida)</li>
+            </ul>
+            <p><a href='http://localhost/shoplink/login.php'>Clique aqui para acessar sua conta</a></p>
+        ";
+        // Tenta enviar sem travar o processo se falhar
+        enviarEmail($email, $nome, 'Bem-vindo ao Shoplink!', $corpo_email);
+
+        // 7. Login Automático
         $id_novo = $pdo->lastInsertId();
         $_SESSION['id_usuario'] = $id_novo;
         $_SESSION['nome'] = $nome;
         $_SESSION['role'] = 'cliente';
 
-        // Redireciona para a Home com aviso de "Email Enviado"
+        // Redireciona para a Home com aviso
         header("Location: index.php?msg=bem_vindo");
         exit();
 
     } catch (PDOException $e) {
-        // Em produção, logar o erro e não exibir na tela
         die("Erro no banco de dados: " . $e->getMessage());
     }
 
