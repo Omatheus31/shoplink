@@ -1,8 +1,17 @@
+
 # 🛍️ Shoplink - E-commerce
 
 ![Status](https://img.shields.io/badge/Status-Finalizado-success) ![PHP](https://img.shields.io/badge/PHP-8.0+-blue) ![MySQL](https://img.shields.io/badge/MySQL-Database-orange)
 
 O **Shoplink** é uma plataforma web completa de e-commerce projetada para pequenos empreendedores gerenciarem suas vendas online. O sistema oferece uma experiência fluida de compra para o cliente e um painel administrativo robusto para o lojista.
+
+---
+
+## 🌐 Acesso Online (Publicado)
+
+O projeto está hospedado e funcional. Você pode acessar a versão de produção através do link abaixo:
+
+👉 **[Acessar Loja Shoplink (shoplink.rf.gd)](http://shoplink.rf.gd)**
 
 ---
 
@@ -41,7 +50,7 @@ O **Shoplink** é uma plataforma web completa de e-commerce projetada para peque
 
 ## 🚀 Instalação e Execução Local
 
-Siga estes passos para rodar o projeto em sua máquina.
+Siga estes passos para rodar o projeto em sua máquina (localhost).
 
 ### 1. Pré-requisitos
 * **XAMPP** (ou qualquer servidor Apache + MySQL + PHP 8).
@@ -61,23 +70,13 @@ cd shoplink
 3.  Crie um novo banco de dados chamado **`shoplink_final`**.
 4.  Clique na aba **Importar**, selecione o arquivo `database.sql` (localizado na raiz deste projeto) e clique em Executar.
 
-### 4\. Configuração de E-mail (SMTP)
+### 4\. Configuração de E-mail (Opcional para Localhost)
 
 O sistema utiliza **PHPMailer** para envio real de e-mails (Recuperação de senha e Boas-vindas).
-Para que o envio funcione, você precisa configurar suas credenciais:
+Para que o envio funcione no seu PC:
 
 1.  Abra o arquivo `includes/email.php` no seu editor de código.
-2.  Localize as linhas de configuração e **altere o e-mail e a senha**:
-    ```php
-    // Coloque seu e-mail do Gmail
-    $mail->Username   = 'SEU_EMAIL@gmail.com'; 
-
-    // Coloque sua Senha de App (Gerada no Google > Segurança)
-    $mail->Password   = 'SUA_SENHA_DE_APP'; 
-
-    // Atualize também o remetente
-    $mail->setFrom('SEU_EMAIL@gmail.com', 'Shoplink - Suporte');
-    ```
+2.  Insira seu e-mail Gmail e sua **Senha de App** (Gerada nas configurações de segurança do Google \> Senhas de App) nas linhas indicadas.
 
 > *Nota: Caso não configure o SMTP, o sistema continuará funcionando e exibirá os links de recuperação simulados na tela (Modo Debug).*
 
@@ -90,7 +89,7 @@ Abra no seu navegador:
 
 ## 🔐 Credenciais de Acesso (Teste)
 
-Você pode usar as credenciais pré-configuradas abaixo:
+Você pode criar uma conta nova ou usar as credenciais pré-configuradas abaixo:
 
 | Perfil | E-mail | Senha |
 | :--- | :--- | :--- |
@@ -107,20 +106,6 @@ VALUES ('Novo Admin', 'novo@admin.com', '$2y$10$a3cUsBb9Z1kpvc9kH1qQN.bp6YO5ZLmp
 ```
 
 *(A senha criada será: **123456**)*
-
------
-
-## 🌐 Como Colocar Online (Ngrok)
-
-Para apresentar o projeto publicamente sem hospedagem fixa:
-
-1.  Baixe e instale o [Ngrok](https://ngrok.com).
-2.  Com o XAMPP rodando, abra o terminal na pasta do projeto e execute:
-    ```bash
-    ngrok http 80
-    ```
-3.  Copie o link HTTPS gerado (ex: `https://xxxx-xxxx.ngrok-free.app`).
-4.  Acesse: `https://xxxx-xxxx.ngrok-free.app/shoplink`
 
 -----
 
@@ -142,4 +127,4 @@ shoplink/
 
 ## 👨‍💻 Autor
 
-Desenvolvido por **Matheus Farias Sousa** para a disciplina de Programação Web.
+Desenvolvido por **Matheus Farias** para a disciplina de Programação Web.
