@@ -33,14 +33,12 @@ try {
         $query_produtos .= " AND id_categoria IS NULL";
     }
 
-    // --- CORREÇÃO DA BUSCA AQUI ---
+    // Busca por nome ou descrição
     if ($q) {
-        // Usamos :q1 e :q2 para evitar o erro de "Invalid parameter number"
         $query_produtos .= " AND (nome LIKE :q1 OR descricao LIKE :q2)";
         $params[':q1'] = '%' . $q . '%';
         $params[':q2'] = '%' . $q . '%';
     }
-    // ------------------------------
     
     $query_produtos .= " ORDER BY id DESC";
     
@@ -99,7 +97,7 @@ require_once 'includes/header_public.php';
                             </div>
                             <div class="card-body d-flex flex-column">
                                 <h6 class="card-title mb-2">
-                                    <a href="produto_detalhe.php?id=<?php echo $produto['id']; ?>" class="text-dark text-decoration-none fw-bold">
+                                    <a href="produto_detalhe.php?id=<?php echo $produto['id']; ?>" class="text-dark text-decoration-none fw-bold stretched-link">
                                         <?php echo htmlspecialchars($produto['nome']); ?>
                                     </a>
                                 </h6>

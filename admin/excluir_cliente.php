@@ -1,18 +1,21 @@
 <?php
-require_once 'includes/header_admin.php';
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($id <= 0) {
-    header('Location: clientes.php');
+// admin/excluir_cliente.php
+session_start();
+if (!isset($_SESSION['id_usuario']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../login.php");
     exit();
 }
+require_once '../config/database.php';
 
-try {
-    $stmt = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
-    $stmt->execute([':id' => $id]);
-    header('Location: clientes.php?msg=excluido');
-    exit();
-} catch (PDOException $e) {
-    echo '<div class="alert alert-danger">Erro ao excluir: ' . $e->getMessage() . '</div>';
+if (isset($_GET['id'])) {
+    $id = (int)$_GET['id'];
+    try {
+        // Deleta apenas se for CLIENTE (segurança para não apagar admin por engano)
+        $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = :id AND role = 'cliente'");
+        $stmt->execute([':id' => $id]);
+        header("Location: clientes.php?msg=deletado");
+    } catch (PDOException $e) {
+        die("Erro: " . $e->getMessage());
+    }
 }
-
-require_once 'includes/footer_admin.php';
+?>

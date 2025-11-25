@@ -77,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 6. ENVIA E-MAIL DE BOAS-VINDAS (Opcional, mas chique!)
         $corpo_email = "
-            <h2>Bem-vindo ao Shoplink!</h2>
             <p>Olá, <strong>$nome</strong>.</p>
             <p>Seu cadastro foi realizado com sucesso. Agora você pode aproveitar nossas ofertas exclusivas.</p>
             <p>Seus dados de acesso:</p>

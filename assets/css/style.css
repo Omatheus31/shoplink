@@ -65,3 +65,17 @@
 .nav-link.btn-sair:hover {
     background-color: #c0392b;
 }
+
+/* Faz o botão ficar clicável acima do link esticado do card */
+.product-card .add-to-cart-btn {
+    position: relative;
+    z-index: 2; 
+}
+/* Efeito hover no card todo */
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}

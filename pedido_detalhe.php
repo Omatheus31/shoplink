@@ -3,14 +3,11 @@
 require_once 'config/database.php';
 
 // 1. DEFINE TÍTULO E INCLUI O HEADER
-// O header_public.php já contém o session_start(), então não precisamos chamar aqui.
 $titulo_pagina = 'Detalhes do Pedido';
 require_once 'includes/header_public.php';
 
 // 2. VERIFICA LOGIN
-// Agora que o header iniciou a sessão, podemos verificar se existe o id_usuario
 if (!isset($_SESSION['id_usuario'])) {
-    // Usamos JavaScript para redirecionar porque o header já enviou HTML
     echo "<script>window.location.href='login.php';</script>";
     exit();
 }
@@ -25,7 +22,7 @@ $id_pedido = (int)$_GET['id'];
 $id_usuario = $_SESSION['id_usuario'];
 
 try {
-    // 4. BUSCA O PEDIDO (Com trava de segurança: só se for dono do pedido)
+    // 4. BUSCA O PEDIDO
     $sql = "SELECT * FROM pedidos WHERE id = :id AND id_usuario = :user_id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id' => $id_pedido, ':user_id' => $id_usuario]);
@@ -47,6 +44,16 @@ try {
 
 } catch (PDOException $e) {
     die("Erro: " . $e->getMessage());
+}
+
+// MENSAGEM DE SUCESSO DA COMPRA
+if (isset($_GET['compra_sucesso']) && $_GET['compra_sucesso'] == 'true') {
+    echo '
+    <div class="alert alert-success text-center shadow-sm mb-4 mt-3">
+        <h3 class="alert-heading fw-bold"><i class="bi bi-check-circle-fill"></i> Pedido Realizado com Sucesso!</h3>
+        <p class="mb-0">Obrigado pela sua compra. Acompanhe o status do seu pedido abaixo.</p>
+    </div>
+    ';
 }
 ?>
 

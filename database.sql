@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 23/11/2025 às 18:53
+-- Tempo de geração: 25/11/2025 às 13:45
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.0.30
 
@@ -31,6 +31,14 @@ CREATE TABLE `categorias` (
   `id` int(11) NOT NULL,
   `nome` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Despejando dados para a tabela `categorias`
+--
+
+INSERT INTO `categorias` (`id`, `nome`) VALUES
+(16, 'Puff Banqueta'),
+(15, 'Puff Baú');
 
 -- --------------------------------------------------------
 
@@ -70,6 +78,17 @@ CREATE TABLE `pedidos` (
   `metodo_pagamento` varchar(50) DEFAULT 'PIX'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Despejando dados para a tabela `pedidos`
+--
+
+INSERT INTO `pedidos` (`id`, `id_usuario`, `nome_cliente`, `telefone_cliente`, `endereco_cliente`, `total_pedido`, `data_pedido`, `status`, `metodo_pagamento`) VALUES
+(6, 1, 'Administrador Shoplink', '93991337352', ',  - ', 300.00, '2025-11-25 03:06:05', 'Pago', 'PIX'),
+(7, 2, 'Cliente Exemplo', '93991337352', ',  - ', 300.00, '2025-11-25 11:49:37', 'Aguardando Pagamento', 'PIX'),
+(8, NULL, 'Pablo', '93984154861', 'Avenida Papagaio, 11479 - Salvação', 100.00, '2025-11-25 11:53:32', 'Aguardando Pagamento', 'Cartão de Crédito'),
+(9, NULL, 'Pablo', '93984154861', 'Avenida Papagaio, 11479 - Salvação', 100.00, '2025-11-25 11:57:58', 'Aguardando Pagamento', 'Boleto'),
+(10, NULL, 'Pablo', '93984154861', 'Avenida Papagaio, 11479 - Salvação', 100.00, '2025-11-25 11:58:29', 'Aguardando Pagamento', 'PIX');
+
 -- --------------------------------------------------------
 
 --
@@ -83,6 +102,17 @@ CREATE TABLE `pedido_itens` (
   `quantidade` int(11) NOT NULL,
   `preco_unitario` decimal(10,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Despejando dados para a tabela `pedido_itens`
+--
+
+INSERT INTO `pedido_itens` (`id`, `id_pedido`, `id_produto`, `quantidade`, `preco_unitario`) VALUES
+(9, 6, 13, 2, 150.00),
+(10, 7, 13, 2, 150.00),
+(11, 8, 15, 1, 100.00),
+(12, 9, 15, 1, 100.00),
+(13, 10, 15, 1, 100.00);
 
 -- --------------------------------------------------------
 
@@ -99,6 +129,16 @@ CREATE TABLE `produtos` (
   `imagem_url` varchar(255) NOT NULL,
   `data_criacao` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Despejando dados para a tabela `produtos`
+--
+
+INSERT INTO `produtos` (`id`, `nome`, `descricao`, `preco`, `id_categoria`, `imagem_url`, `data_criacao`) VALUES
+(13, 'Puff Baú', 'Puff Baú\r\nMaterial: MDF\r\nRevestido com o tecido Suede\r\n\r\nTamanho:\r\nLargura: 45cm\r\nAltura: 40cm\r\nComprimento: 85cm\r\n\r\nSuporta até: 150kg', 150.00, 15, '69251217cbec2.png', '2025-11-25 02:19:03'),
+(15, 'Puff', 'Puff Normal Material: MDF \r\nRevestido com o tecido Suede \r\n\r\nLargura: 45cm \r\nAltura: 40cm \r\nComprimento: 85cm \r\n\r\nSuporta até: 150kg', 100.00, 16, '69251a91e4001.png', '2025-11-25 02:55:13'),
+(17, 'Puff Baú', 'Puff Baú: Conforto e Organização para Sua Casa!\r\n\r\nEstrutura: Madeira maciça (como eucalipto) para maior durabilidade.\r\nAssento: Espuma de poliuretano (densidade D26 ou D14) e manta acrílica, garantindo conforto e qualidade.\r\nRevestimento: Suede, couro sintético ou polipropileno, com toque suave e resistente.\r\nAcabamento interno: TNT, com alças que evitam que a tampa caia.\r\nPés: Maciços e reforçados para maior estabilidade e suporte de peso. \r\n\r\nMedidas: \r\n  Comprimento - 85cm\r\n  Largura - 40cm\r\n  Altura - 45cm\r\n\r\nPeso suportado: Carga máxima 100kg).', 250.00, 15, '6925a17b6f733.png', '2025-11-25 12:30:19'),
+(18, 'Puff Baú', 'Puff Baú Premium: Design, conforto e praticidade em uma só peça. \r\n\r\nIdeal para salas, quartos, closets e escritórios, ele se adapta a diferentes necessidades e decorações.\r\n\r\nEstrutura: Madeira maciça (como eucalipto) para maior durabilidade.\r\nAssento: Espuma de poliuretano (densidade D26 ou D14) e manta acrílica, garantindo conforto e qualidade.\r\nRevestimento: Suede, couro sintético ou polipropileno, com toque suave e resistente.\r\nAcabamento interno: TNT, com alças que evitam que a tampa caia.\r\nPés: Maciços e reforçados para maior estabilidade e suporte de peso. \r\n\r\nMedidas: \r\n  Comprimento - 1,35m\r\n  Largura - 40cm\r\n  Altura - 45cm\r\n\r\nCarga máxima 100kg', 500.00, 15, '6925a266369e6.png', '2025-11-25 12:34:46');
 
 -- --------------------------------------------------------
 
@@ -128,8 +168,8 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nome`, `email`, `telefone`, `endereco_cep`, `endereco_rua`, `endereco_numero`, `endereco_bairro`, `endereco_cidade`, `endereco_estado`, `endereco_complemento`, `senha_hash`, `role`, `data_cadastro`) VALUES
-(1, 'Administrador', 'admin@shoplink.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '$2y$10$a3cUsBb9Z1kpvc9kH1qQN.bp6YO5ZLmpPYV6WCCsT4PsZ3vAsmFD6', 'admin', '2025-11-20 20:18:50'),
-(2, 'Cliente Exemplo', 'cliente@teste.com', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '$2y$10$qS6TXkLde.Sszq4.XOlOIeLVNCmSw7.F0FnC2KornKZw60ai7p7si', 'cliente', '2025-11-20 20:18:50');
+(1, 'Administrador Shoplink', 'admin@shoplink.com', '93991337352', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '$2y$10$a3cUsBb9Z1kpvc9kH1qQN.bp6YO5ZLmpPYV6WCCsT4PsZ3vAsmFD6', 'admin', '2025-11-20 20:18:50'),
+(2, 'Cliente Exemplo', 'cliente@teste.com', '93991337352', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '$2y$10$qS6TXkLde.Sszq4.XOlOIeLVNCmSw7.F0FnC2KornKZw60ai7p7si', 'cliente', '2025-11-20 20:18:50');
 
 --
 -- Índices para tabelas despejadas
@@ -186,7 +226,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de tabela `categorias`
 --
 ALTER TABLE `categorias`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de tabela `configuracoes`
@@ -198,25 +238,25 @@ ALTER TABLE `configuracoes`
 -- AUTO_INCREMENT de tabela `pedidos`
 --
 ALTER TABLE `pedidos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de tabela `pedido_itens`
 --
 ALTER TABLE `pedido_itens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de tabela `produtos`
 --
 ALTER TABLE `produtos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de tabela `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- Restrições para tabelas despejadas

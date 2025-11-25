@@ -64,7 +64,11 @@ if (isset($pdo)) {
                             <span id="cart-counter" class="badge bg-success rounded-pill ms-1">0</span>
                         </a>
                     </li>
-
+                    <li class="nav-item">
+                        <a class="nav-link" href="contato.php">
+                            <i class="bi bi-envelope-fill"></i> Contato
+                        </a>
+                    </li>
                     <?php if (isset($_SESSION['id_usuario'])): ?>
                         
                         <li class="nav-item border-start ms-2 ps-2 d-none d-lg-block"></li> <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
