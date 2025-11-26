@@ -8,33 +8,40 @@ $email_recuperacao = "";
 $erro = "";
 $sucesso = false;
 
-// 1. Verifica o Token na URL
+// 1. Verifica o Token na URL (GET)
 if (isset($_GET['token'])) {
-    // Decodifica o email (na simulação usamos base64)
     $email_recuperacao = base64_decode($_GET['token']);
 }
 
-// 2. Processa o Formulário
+// 2. Processa o Formulário (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email_post = $_POST['email'];
     $senha = $_POST['senha'];
     $confirma = $_POST['confirma_senha'];
 
+    // Mantém o email para não perder se der erro
+    $email_recuperacao = $email_post; 
+
     if ($senha !== $confirma) {
         $erro = "As senhas não conferem.";
-        $email_recuperacao = $email_post; // Mantém o email para não perder
-    } elseif (strlen($senha) < 6) {
-        $erro = "A senha deve ter no mínimo 6 caracteres.";
-        $email_recuperacao = $email_post;
+    } elseif (strlen($senha) < 8) { // Ajustado para 8 caracteres (Padrão do sistema)
+        $erro = "A senha deve ter no mínimo 8 caracteres.";
     } else {
-        // TUDO CERTO: ATUALIZA NO BANCO
         try {
+            // Criptografa e Atualiza
             $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+            
             $stmt = $pdo->prepare("UPDATE usuarios SET senha_hash = :senha WHERE email = :email");
             $stmt->execute([':senha' => $senha_hash, ':email' => $email_post]);
-            $sucesso = true;
+            
+            if ($stmt->rowCount() > 0) {
+                $sucesso = true;
+            } else {
+                // Se não afetou nenhuma linha, talvez o email não exista ou a senha já era essa
+                $erro = "Erro ao atualizar. Verifique se o email está correto.";
+            }
         } catch (PDOException $e) {
-            $erro = "Erro ao atualizar: " . $e->getMessage();
+            $erro = "Erro no banco de dados: " . $e->getMessage();
         }
     }
 }
@@ -46,39 +53,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-body p-4">
                 
                 <?php if ($sucesso): ?>
-                    <div class="text-center">
+                    <div class="text-center py-4">
                         <i class="bi bi-check-circle-fill text-success display-1"></i>
-                        <h3 class="mt-3">Senha Alterada!</h3>
-                        <p class="text-muted">Sua senha foi redefinida com sucesso.</p>
-                        <a href="login.php" class="btn btn-success w-100">Fazer Login Agora</a>
+                        <h3 class="mt-3 fw-bold">Senha Alterada!</h3>
+                        <p class="text-muted mb-4">Sua senha foi redefinida com sucesso.</p>
+                        <a href="login.php" class="btn btn-success w-100 btn-lg">Fazer Login Agora</a>
                     </div>
                 <?php elseif (empty($email_recuperacao)): ?>
                     <div class="alert alert-danger text-center">
-                        Link inválido ou expirado. <a href="recuperar_senha.php">Tente novamente</a>.
+                        <i class="bi bi-exclamation-triangle-fill"></i> Link inválido ou expirado. 
+                        <br><a href="recuperar_senha.php" class="alert-link">Solicitar novo link</a>.
                     </div>
                 <?php else: ?>
                     
-                    <h3 class="text-center mb-3">Criar Nova Senha</h3>
-                    <p class="text-center text-muted small mb-4">Defina uma nova senha para <strong><?php echo htmlspecialchars($email_recuperacao); ?></strong></p>
+                    <h3 class="text-center mb-2 fw-bold">Criar Nova Senha</h3>
+                    <p class="text-center text-muted small mb-4">
+                        Definindo senha para: <strong><?php echo htmlspecialchars($email_recuperacao); ?></strong>
+                    </p>
 
                     <?php if ($erro): ?>
-                        <div class="alert alert-danger"><?php echo $erro; ?></div>
+                        <div class="alert alert-danger text-center py-2"><?php echo $erro; ?></div>
                     <?php endif; ?>
 
                     <form method="post">
                         <input type="hidden" name="email" value="<?php echo htmlspecialchars($email_recuperacao); ?>">
                         
                         <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="senha" name="senha" placeholder="Nova Senha" required minlength="6">
-                            <label for="senha">Nova Senha</label>
+                            <!-- CORREÇÃO: placeholder vazio para não sobrepor o label -->
+                            <input type="password" class="form-control" id="senha" name="senha" placeholder=" " required minlength="8">
+                            <label for="senha">Nova Senha (Mín. 8 caracteres)</label>
                         </div>
                         
                         <div class="form-floating mb-4">
-                            <input type="password" class="form-control" id="confirma_senha" name="confirma_senha" placeholder="Confirme" required>
+                            <!-- CORREÇÃO: placeholder vazio para não sobrepor o label -->
+                            <input type="password" class="form-control" id="confirma_senha" name="confirma_senha" placeholder=" " required>
                             <label for="confirma_senha">Confirme a Nova Senha</label>
                         </div>
 
-                        <button class="btn btn-primary w-100 py-2">Salvar Nova Senha</button>
+                        <button class="btn btn-primary w-100 py-2 fw-bold">Salvar Nova Senha</button>
                     </form>
                 <?php endif; ?>
 

@@ -17,8 +17,8 @@ function enviarEmail($destinatario, $nome_destinatario, $assunto, $mensagemHTML)
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'SEU_EMAIL@gmail.com'; // <--- COLOQUE SEU EMAIL AQUI
-        $mail->Password   = 'SUA_SENHA_DE_16_LETRAS';     // <--- COLOQUE A SENHA DE 16 LETRAS AQUI
+        $mail->Username   = 'EMAIL_DA_LOJA@EXEMPLO.com'; // <--- COLOQUE SEU EMAIL AQUI
+        $mail->Password   = 'SUA_SENHA_DE_16_LETRAS_AQUI';     // <--- COLOQUE A SENHA DE 16 LETRAS AQUI
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
         $mail->CharSet    = 'UTF-8';
@@ -33,7 +33,7 @@ function enviarEmail($destinatario, $nome_destinatario, $assunto, $mensagemHTML)
         );
 
         // 2. Remetente e Destinatário
-        $mail->setFrom('SEU_EMAIL@gmail.com', 'Shoplink - Suporte'); // <--- SEU EMAIL NOVAMENTE
+        $mail->setFrom('EMAIL_DA_LOJA@EXEMPLO.com', 'Shoplink - Suporte'); // <--- SEU EMAIL NOVAMENTE
         $mail->addAddress($destinatario, $nome_destinatario);
 
         // 3. Conteúdo do Email
