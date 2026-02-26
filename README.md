@@ -7,14 +7,6 @@ O **Shoplink** é uma plataforma web completa de e-commerce projetada para peque
 
 ---
 
-## 🌐 Acesso Online (Publicado)
-
-O projeto está hospedado e funcional. Você pode acessar a versão de produção através do link abaixo:
-
-👉 **[Acessar Loja Shoplink (shoplink.rf.gd)](http://shoplink.rf.gd)**
-
----
-
 ## ✨ Funcionalidades Principais
 
 ### 👤 Área do Cliente
